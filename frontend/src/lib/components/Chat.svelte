@@ -200,7 +200,7 @@
 
 <div class="chat-container">
 	<div class="chat-header">
-		<h2>#{$currentChannel}</h2>
+		<h2>{$currentChannel}</h2>
 	</div>
 
 	<div class="messages" bind:this={chatContainer}>
@@ -252,38 +252,46 @@
 		</div>
 	{/if}
 
-	<div class="input-container">
+	<div class="input-wrapper">
 		<input
 			type="file"
 			bind:this={fileInput}
 			on:change={handleFileSelect}
 			style="display: none;"
 		/>
-		<button
-			class="attachment-button"
-			on:click={() => fileInput?.click()}
-			title="Attach file"
-		>
-			📎
-		</button>
-		<button
-			class="gif-button"
-			on:click={() => showGiphyPicker = !showGiphyPicker}
-			title="Add GIF"
-		>
-			GIF
-		</button>
-		<textarea
-			bind:value={messageInput}
-			on:input={handleInput}
-			on:keydown={handleKeyDown}
-			placeholder="Type a message... (Shift+Enter for new line)"
-			maxlength="2000"
-			rows="1"
-		></textarea>
-		<button on:click={handleSubmit} disabled={!messageInput.trim()}>
-			Send
-		</button>
+		<div class="input-container">
+			<div class="input-buttons-left">
+				<button
+					class="input-icon-button"
+					on:click={() => fileInput?.click()}
+					title="Attach file"
+				>
+					📎
+				</button>
+				<button
+					class="input-icon-button"
+					on:click={() => showGiphyPicker = !showGiphyPicker}
+					title="Add GIF"
+				>
+					GIF
+				</button>
+			</div>
+			<textarea
+				bind:value={messageInput}
+				on:input={handleInput}
+				on:keydown={handleKeyDown}
+				placeholder="Type a message... (Shift+Enter for new line)"
+				maxlength="2000"
+				rows="1"
+			></textarea>
+			<button
+				class="send-button"
+				on:click={handleSubmit}
+				disabled={!messageInput.trim()}
+			>
+				Send
+			</button>
+		</div>
 	</div>
 </div>
 
@@ -299,10 +307,14 @@
 		padding: 1rem;
 		background: var(--bg-secondary);
 		border-bottom: 1px solid var(--border);
+		display: flex;
+		align-items: center;
 	}
 
 	.chat-header h2 {
 		font-size: 1.25rem;
+		margin: 0;
+		font-weight: 600;
 	}
 
 	.messages {
@@ -481,50 +493,87 @@
 		border-radius: 4px;
 	}
 
-	.input-container {
-		padding: 1rem;
+	.input-wrapper {
+		padding: 0.25rem;
 		background: var(--bg-secondary);
 		border-top: 1px solid var(--border);
+	}
+
+	.input-container {
 		display: flex;
+		align-items: center;
+		background: var(--bg-primary);
+		border: 1px solid var(--border);
+		border-radius: 0;
+		padding: 0.5rem;
 		gap: 0.5rem;
+		transition: border-color 0.2s;
 	}
 
-	.attachment-button {
+	.input-container:focus-within {
+		border-color: var(--accent);
+	}
+
+	.input-buttons-left {
+		display: flex;
+		align-items: center;
+		gap: 0.25rem;
+	}
+
+	.input-icon-button {
+		background: transparent;
+		border: none;
+		color: var(--text-secondary);
+		font-size: 1.1rem;
+		padding: 0.375rem 0.5rem;
+		cursor: pointer;
+		border-radius: 0;
+		transition: all 0.2s;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		font-weight: 600;
+	}
+
+	.input-icon-button:hover {
 		background: var(--bg-tertiary);
 		color: var(--accent);
-		font-weight: 600;
-		padding: 0.5rem 0.75rem;
-		font-size: 1.25rem;
-	}
-
-	.attachment-button:hover {
-		background: var(--accent);
-		color: white;
-	}
-
-	.gif-button {
-		background: var(--bg-tertiary);
-		color: var(--accent);
-		font-weight: 600;
-		padding: 0.5rem 0.75rem;
-	}
-
-	.gif-button:hover {
-		background: var(--accent);
-		color: white;
 	}
 
 	textarea {
 		flex: 1;
-		min-height: 40px;
+		min-height: 28px;
 		max-height: 200px;
-		resize: vertical;
+		resize: none;
 		font-family: inherit;
 		line-height: 1.5;
-		padding: 0.625rem;
+		padding: 0.25rem;
+		border: none;
+		background: transparent;
+		color: var(--text-primary);
+		outline: none;
 	}
 
-	input {
-		flex: 1;
+	.send-button {
+		background: var(--accent);
+		color: white;
+		border: none;
+		padding: 0.5rem 1rem;
+		border-radius: 0;
+		font-weight: 600;
+		cursor: pointer;
+		transition: all 0.2s;
+		font-size: 0.9rem;
+	}
+
+	.send-button:hover:not(:disabled) {
+		background: var(--accent);
+		opacity: 0.9;
+		transform: translateY(-1px);
+	}
+
+	.send-button:disabled {
+		opacity: 0.4;
+		cursor: not-allowed;
 	}
 </style>

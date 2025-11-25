@@ -2,7 +2,7 @@
 	import { channels, currentChannel, joinChannel, createChannel, deleteChannel, markMessagesAsRead } from '$lib/socket';
 	import Settings from './Settings.svelte';
 
-	export let activeView: 'chat' | 'draw' | 'screen' = 'chat';
+	export let activeView: 'chat' | 'screen' = 'chat';
 
 	let newChannelName = '';
 	let showCreateInput = false;
@@ -42,6 +42,19 @@
 		</button>
 	</div>
 
+	<!-- Screen Share Button -->
+	<div class="screen-share-section">
+		<button
+			class="screen-share-btn"
+			class:active={activeView === 'screen'}
+			on:click={() => activeView = 'screen'}
+			title="Screen Share"
+		>
+			<span class="icon">🖥️</span>
+			<span>Screen Share</span>
+		</button>
+	</div>
+
 	<div class="sidebar-header">
 		<h3>Text Channels</h3>
 		<button class="add-btn" on:click={() => showCreateInput = !showCreateInput} title="Create channel">+</button>
@@ -73,25 +86,6 @@
 			</div>
 		{/each}
 	</div>
-
-	<div class="bottom-nav">
-		<button
-			class="nav-btn"
-			class:active={activeView === 'draw'}
-			on:click={() => activeView = 'draw'}
-		>
-			<span class="icon">✏️</span>
-			<span>Draw</span>
-		</button>
-		<button
-			class="nav-btn"
-			class:active={activeView === 'screen'}
-			on:click={() => activeView = 'screen'}
-		>
-			<span class="icon">🖥️</span>
-			<span>Screen Share</span>
-		</button>
-	</div>
 </div>
 
 <Settings bind:isOpen={showSettings} />
@@ -111,8 +105,9 @@
 		display: flex;
 		align-items: center;
 		justify-content: space-between;
-		padding: 1rem;
+		padding: 0.75rem 1rem;
 		border-bottom: 1px solid var(--border);
+		height: 58px;
 	}
 
 	.logo {
@@ -122,7 +117,7 @@
 	}
 
 	.logo-img {
-		height: 40px;
+		height: 32px;
 		width: auto;
 		filter: invert(1);
 	}
@@ -135,7 +130,7 @@
 		color: var(--text-secondary);
 		padding: 0.5rem;
 		transition: all 0.2s;
-		border-radius: 8px;
+		border-radius: 0;
 	}
 
 	.settings-btn:hover {
@@ -145,11 +140,13 @@
 	}
 
 	.sidebar-header {
-		padding: 1rem;
+		padding: 0.75rem 1rem;
 		border-bottom: 1px solid var(--border);
 		display: flex;
-		justify-content: space-between;
+		justify-content: center;
 		align-items: center;
+		height: 58px;
+		position: relative;
 	}
 
 	.sidebar-header h3 {
@@ -161,9 +158,11 @@
 	}
 
 	.add-btn {
+		position: absolute;
+		right: 1rem;
 		width: 24px;
 		height: 24px;
-		border-radius: 4px;
+		border-radius: 0;
 		background: none;
 		border: none;
 		color: var(--text-secondary);
@@ -192,7 +191,7 @@
 		padding: 0.25rem 0.5rem;
 		font-size: 0.875rem;
 		border: 1px solid var(--border);
-		border-radius: 4px;
+		border-radius: 0;
 		background: var(--bg-secondary);
 		color: var(--text-primary);
 	}
@@ -203,7 +202,7 @@
 		background: var(--accent);
 		color: white;
 		border: none;
-		border-radius: 4px;
+		border-radius: 0;
 		cursor: pointer;
 	}
 
@@ -236,7 +235,7 @@
 		cursor: pointer;
 		text-align: left;
 		font-size: 0.9rem;
-		border-radius: 4px;
+		border-radius: 0;
 		transition: all 0.2s;
 	}
 
@@ -258,7 +257,7 @@
 		opacity: 0;
 		width: 20px;
 		height: 20px;
-		border-radius: 4px;
+		border-radius: 0;
 		background: none;
 		border: none;
 		color: var(--text-secondary);
@@ -279,16 +278,12 @@
 		color: white;
 	}
 
-	.bottom-nav {
-		margin-top: auto;
+	.screen-share-section {
 		padding: 0.5rem;
-		border-top: 1px solid var(--border);
-		display: flex;
-		flex-direction: column;
-		gap: 0.25rem;
+		border-bottom: 1px solid var(--border);
 	}
 
-	.nav-btn {
+	.screen-share-btn {
 		display: flex;
 		align-items: center;
 		gap: 0.5rem;
@@ -297,23 +292,24 @@
 		border: none;
 		color: var(--text-secondary);
 		cursor: pointer;
-		border-radius: 4px;
+		border-radius: 0;
 		transition: all 0.2s;
 		font-size: 0.9rem;
+		width: 100%;
 		text-align: left;
 	}
 
-	.nav-btn:hover {
+	.screen-share-btn:hover {
 		background: var(--bg-secondary);
 		color: var(--text-primary);
 	}
 
-	.nav-btn.active {
+	.screen-share-btn.active {
 		background: var(--accent);
 		color: white;
 	}
 
-	.nav-btn .icon {
+	.screen-share-btn .icon {
 		font-size: 1.1rem;
 	}
 </style>

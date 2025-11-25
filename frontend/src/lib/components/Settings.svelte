@@ -96,6 +96,38 @@
 		}
 	}
 
+	async function clearServerMessages() {
+		if (!confirm('Are you sure you want to delete ALL messages from the server? This will clear messages for all users and cannot be undone!')) {
+			return;
+		}
+
+		try {
+			const serverUrl = window.location.origin.includes(':5173')
+				? 'http://localhost:3000'
+				: window.location.origin;
+
+			const response = await fetch(`${serverUrl}/api/clear-messages`, {
+				method: 'POST',
+				headers: {
+					'Content-Type': 'application/json'
+				}
+			});
+
+			const result = await response.json();
+
+			if (result.success) {
+				// Also clear local data
+				channelMessages.set({ general: [] });
+				alert('All server messages have been deleted successfully!');
+			} else {
+				alert('Failed to clear server messages: ' + (result.error || 'Unknown error'));
+			}
+		} catch (error) {
+			console.error('Error clearing server messages:', error);
+			alert('Failed to clear server messages. Check console for details.');
+		}
+	}
+
 	function closeModal() {
 		isOpen = false;
 	}
@@ -166,6 +198,20 @@
 						</div>
 						<button class="toggle-btn" class:active={theme === 'light'} on:click={toggleTheme}>
 							{theme === 'dark' ? '🌙' : '☀️'}
+						</button>
+					</div>
+				</div>
+
+				<!-- Server Management -->
+				<div class="settings-section">
+					<h3>🖥️ Server Management</h3>
+					<div class="setting-item">
+						<div class="setting-info">
+							<span class="setting-label">Clear All Server Messages</span>
+							<span class="setting-description">Delete all messages from the server for all users (cannot be undone)</span>
+						</div>
+						<button class="action-btn danger" on:click={clearServerMessages}>
+							🗑️ Clear Server
 						</button>
 					</div>
 				</div>

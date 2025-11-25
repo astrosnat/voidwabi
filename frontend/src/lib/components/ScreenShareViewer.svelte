@@ -14,9 +14,15 @@
 	} from '$lib/webrtc';
 	import { users } from '$lib/socket';
 
+	export let activeView: 'chat' | 'screen' = 'screen';
+
 	let localStream: MediaStream | null = null;
 	let error = '';
 	let localVideoElement: HTMLVideoElement;
+
+	function backToChat() {
+		activeView = 'chat';
+	}
 
 	async function handleStartShare() {
 		try {
@@ -105,7 +111,12 @@
 
 <div class="screen-share-container">
 	<div class="header">
-		<h2>🖥️ Screen Sharing</h2>
+		<div class="header-left">
+			<button class="back-btn" on:click={backToChat} title="Back to chat">
+				← Back
+			</button>
+			<h2>🖥️ Screen Sharing</h2>
+		</div>
 		{#if $isSharing}
 			<button on:click={handleStopShare} class="stop-btn">
 				Stop Sharing
@@ -175,8 +186,32 @@
 		align-items: center;
 	}
 
+	.header-left {
+		display: flex;
+		align-items: center;
+		gap: 1rem;
+	}
+
 	.header h2 {
 		font-size: 1.25rem;
+		margin: 0;
+	}
+
+	.back-btn {
+		background: var(--bg-tertiary);
+		color: var(--text-primary);
+		border: 1px solid var(--border);
+		padding: 0.5rem 1rem;
+		border-radius: 0;
+		font-size: 0.9rem;
+		cursor: pointer;
+		transition: all 0.2s;
+		font-weight: 500;
+	}
+
+	.back-btn:hover {
+		background: var(--bg-hover);
+		transform: translateX(-2px);
 	}
 
 	.stop-btn {
@@ -207,7 +242,7 @@
 
 	.screen-item {
 		background: var(--bg-secondary);
-		border-radius: 8px;
+		border-radius: 0;
 		overflow: hidden;
 		border: 1px solid var(--border);
 	}
@@ -225,7 +260,7 @@
 		background: var(--accent);
 		color: white;
 		padding: 0.25rem 0.75rem;
-		border-radius: 12px;
+		border-radius: 0;
 		font-size: 0.85rem;
 		font-weight: 600;
 	}

@@ -6,12 +6,11 @@
 	import ChannelSidebar from '$lib/components/ChannelSidebar.svelte';
 	import UserPanel from '$lib/components/UserPanel.svelte';
 	import ScreenShareViewer from '$lib/components/ScreenShareViewer.svelte';
-	import DrawingBoard from '$lib/components/DrawingBoard.svelte';
 	import CallModal from '$lib/components/CallModal.svelte';
 
 	let username = '';
 	let loggedIn = false;
-	let activeView: 'chat' | 'draw' | 'screen' = 'chat';
+	let activeView: 'chat' | 'screen' = 'chat';
 	let showUserPanel = false;
 	let channelSidebarWidth = 240;
 	let userPanelWidth = 250;
@@ -71,10 +70,8 @@
 		<div class="main-content">
 			{#if activeView === 'chat'}
 				<Chat />
-			{:else if activeView === 'draw'}
-				<DrawingBoard />
 			{:else if activeView === 'screen'}
-				<ScreenShareViewer />
+				<ScreenShareViewer bind:activeView />
 			{/if}
 		</div>
 		{#if showUserPanel}
@@ -155,7 +152,7 @@
 		background: var(--bg-secondary);
 		border: 1px solid var(--border);
 		border-right: none;
-		border-radius: 8px 0 0 8px;
+		border-radius: 0;
 		cursor: pointer;
 		display: flex;
 		align-items: center;
