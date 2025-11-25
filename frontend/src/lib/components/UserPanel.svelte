@@ -116,12 +116,16 @@
 	}
 
 	.panel-header {
-		padding: 1rem;
+		padding: 0.75rem 1rem;
 		border-bottom: 1px solid var(--border);
+		height: 58px;
+		display: flex;
+		align-items: center;
 	}
 
 	.panel-header h3 {
-		font-size: 0.85rem;
+		font-size: 0.875rem;
+		font-weight: 600;
 		text-transform: uppercase;
 		color: var(--text-secondary);
 		margin: 0;
@@ -148,7 +152,7 @@
 		align-items: center;
 		gap: 0.75rem;
 		padding: 0.625rem;
-		border-radius: 8px;
+		border-radius: 0;
 		background: transparent;
 		border: none;
 		width: 100%;
@@ -242,7 +246,7 @@
 		width: 32px;
 		height: 32px;
 		border: none;
-		border-radius: 6px;
+		border-radius: 0;
 		background: var(--bg-tertiary);
 		color: var(--text-primary);
 		font-size: 1rem;

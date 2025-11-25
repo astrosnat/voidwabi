@@ -95,6 +95,17 @@
 		contextMenuVisible = false;
 	}
 
+	function handleImageContextMenu(event: MouseEvent, fileUrl: string, fileName: string) {
+		event.preventDefault();
+		// Create a temporary anchor element to trigger download
+		const link = document.createElement('a');
+		link.href = getFileUrl(fileUrl);
+		link.download = fileName;
+		document.body.appendChild(link);
+		link.click();
+		document.body.removeChild(link);
+	}
+
 	function formatFileSize(bytes?: number): string {
 		if (!bytes) return '';
 		if (bytes < 1024) return bytes + ' B';
@@ -251,11 +262,11 @@
 			<div class="message-header">
 				<div class="header-left">
 					{#if user}
-						<button class="username" style="color: {getUserColor(message.user)}" on:click={() => openProfile(user)}>
+						<button class="username" on:click={() => openProfile(user)}>
 							{message.user}
 						</button>
 					{:else}
-						<span class="username" style="color: {getUserColor(message.user)}">{message.user}</span>
+						<span class="username">{message.user}</span>
 					{/if}
 					{#if message.isPinned}
 						<span class="pin-badge" title="Pinned message">📌</span>
@@ -272,7 +283,7 @@
 				<div class="reply-preview">
 					<div class="reply-line"></div>
 					<div class="reply-content">
-						<span class="reply-username" style="color: {getUserColor(replyToMsg.user)}">
+						<span class="reply-username">
 							{replyToMsg.user}
 						</span>
 						<span class="reply-text">{replyToMsg.text.substring(0, 100)}{replyToMsg.text.length > 100 ? '...' : ''}</span>
@@ -304,7 +315,8 @@
 									alt={message.fileName}
 									class="inline-image"
 									on:click={() => message.fileUrl && enlargeImage(getFileUrl(message.fileUrl))}
-									title="Click to enlarge"
+									on:contextmenu={(e) => message.fileUrl && message.fileName && handleImageContextMenu(e, message.fileUrl, message.fileName)}
+								title="Click to enlarge, right-click to download"
 								/>
 								<a href={getFileUrl(message.fileUrl)} download={message.fileName} class="image-download-link">
 									<span class="file-icon">{getFileIcon(message.fileName)}</span>
@@ -470,6 +482,7 @@
 	.username {
 		font-weight: 600;
 		font-size: 0.9rem;
+		color: var(--text-primary);
 		background: none;
 		border: none;
 		padding: 0;
@@ -773,10 +786,11 @@
 	}
 
 	.enlarged-image {
-		max-width: 90vw;
-		max-height: 90vh;
+		max-width: 85vw;
+		max-height: 85vh;
 		object-fit: contain;
 		border-radius: 8px;
+		cursor: default;
 	}
 
 	.close-modal {

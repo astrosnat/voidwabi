@@ -5,16 +5,18 @@
 }
 
 :root {
-	--bg-primary: #000000;
-	--bg-secondary: #2d2d2d;
-	--bg-tertiary: #3a3a3a;
-	--text-primary: #ffffff;
-	--text-secondary: #b0b0b0;
-	--accent: #4a9eff;
-	--accent-hover: #3a8eef;
-	--border: #404040;
-	--error: #ff4a4a;
-	--success: #4aff88;
+	--bg-primary: #fff5f7;
+	--bg-secondary: #ffe4e9;
+	--bg-tertiary: #ffd1dc;
+	--bg-hover: #ffc2d1;
+	--text-primary: #4a2c3d;
+	--text-secondary: #8b6b7a;
+	--text-tertiary: #a88595;
+	--accent: #ff6b9d;
+	--accent-hover: #ff5689;
+	--border: #ffc2d1;
+	--error: #ff4a6b;
+	--success: #7ed6b8;
 }
 
 body {
@@ -26,10 +28,10 @@ body {
 
 button {
 	background: var(--accent);
-	color: white;
+	color: rgb(253, 225, 225);
 	border: none;
 	padding: 0.5rem 1rem;
-	border-radius: 4px;
+	border-radius: 1px;
 	cursor: pointer;
 	font-size: 0.9rem;
 	transition: background 0.2s;
@@ -49,8 +51,24 @@ input, textarea {
 	color: var(--text-primary);
 	border: 1px solid var(--border);
 	padding: 0.5rem;
-	border-radius: 4px;
+	border-radius: 1px;
 	font-size: 0.9rem;
+}
+
+.input-container textarea::placeholder {
+    color: var(--text-secondary);
+}
+
+.input-container .send-button {
+    background: var(--accent);
+    color: white;
+    padding: 0.35rem 0.75rem;
+    border-radius: 6px;
+    font-size: 0.9rem;
+}
+
+.input-container .send-button:disabled {
+    opacity: 0.4;
 }
 
 input:focus, textarea:focus {

@@ -25,7 +25,9 @@
       "Bash(bun run build:*)",
       "Bash(tasklist:*)",
       "Bash(findstr:*)",
-      "Bash(netstat:*)"
+      "Bash(netstat:*)",
+      "Bash(nul)",
+      "Bash(dir:*)"
     ],
     "deny": [],
     "ask": []

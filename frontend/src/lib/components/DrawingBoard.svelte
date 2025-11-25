@@ -1,117 +1,120 @@
 <script lang="ts">
-	import { onMount, onDestroy, tick } from 'svelte';
-	import { socket } from '$lib/socket';
-	import { browser } from '$app/environment';
+	// EXCALIDRAW FEATURE DISABLED - React/Excalidraw dependencies removed
+	// To re-enable: npm install react react-dom @excalidraw/excalidraw
 
-	let excalidrawContainer: HTMLDivElement;
-	let excalidrawAPI: any = null;
-	let isLoading = true;
-	let errorMessage = '';
+	// import { onMount, onDestroy, tick } from 'svelte';
+	// import { socket } from '$lib/socket';
+	// import { browser } from '$app/environment';
 
-	onMount(async () => {
-		if (!browser) return;
+	// let excalidrawContainer: HTMLDivElement;
+	// let excalidrawAPI: any = null;
+	// let isLoading = true;
+	// let errorMessage = '';
 
-		try {
-			// First, hide the loading state to render the container
-			isLoading = false;
+	// onMount(async () => {
+	// 	if (!browser) return;
 
-			// Wait for Svelte to update the DOM
-			await tick();
+	// 	try {
+	// 		// First, hide the loading state to render the container
+	// 		isLoading = false;
 
-			// Now the container should be available
-			if (!excalidrawContainer) {
-				throw new Error('Excalidraw container not found after DOM update');
-			}
+	// 		// Wait for Svelte to update the DOM
+	// 		await tick();
 
-			// Import React first and set it globally (required for Excalidraw)
-			const React = await import('react');
-			const ReactDOM = await import('react-dom/client');
+	// 		// Now the container should be available
+	// 		if (!excalidrawContainer) {
+	// 			throw new Error('Excalidraw container not found after DOM update');
+	// 		}
 
-			// Set React globally before importing Excalidraw
-			(window as any).React = React;
+	// 		// Import React first and set it globally (required for Excalidraw)
+	// 		const React = await import('react');
+	// 		const ReactDOM = await import('react-dom/client');
 
-			// Now import Excalidraw
-			const { Excalidraw } = await import('@excalidraw/excalidraw');
+	// 		// Set React globally before importing Excalidraw
+	// 		(window as any).React = React;
 
-			console.log('Excalidraw and React loaded successfully');
+	// 		// Now import Excalidraw
+	// 		const { Excalidraw } = await import('@excalidraw/excalidraw');
 
-			// Create React root and render Excalidraw
-			const root = ReactDOM.createRoot(excalidrawContainer);
+	// 		console.log('Excalidraw and React loaded successfully');
 
-			root.render(
-				React.createElement(Excalidraw, {
-					onChange: (elements: any, appState: any) => {
-						throttledChange(elements, appState);
-					},
-					excalidrawAPI: (api: any) => {
-						handleExcalidrawAPI(api);
-					}
-				})
-			);
+	// 		// Create React root and render Excalidraw
+	// 		const root = ReactDOM.createRoot(excalidrawContainer);
 
-			// Set up collaboration
-			if ($socket) {
-				$socket.on('excalidraw-update', (state: any) => {
-					if (excalidrawAPI && state) {
-						try {
-							excalidrawAPI.updateScene(state);
-						} catch (error) {
-							console.error('Error updating scene:', error);
-						}
-					}
-				});
+	// 		root.render(
+	// 			React.createElement(Excalidraw, {
+	// 				onChange: (elements: any, appState: any) => {
+	// 					throttledChange(elements, appState);
+	// 				},
+	// 				excalidrawAPI: (api: any) => {
+	// 					handleExcalidrawAPI(api);
+	// 				}
+	// 			})
+	// 		);
 
-				$socket.on('init', (data: any) => {
-					if (excalidrawAPI && data.excalidrawState) {
-						try {
-							excalidrawAPI.updateScene(data.excalidrawState);
-						} catch (error) {
-							console.error('Error updating scene from init:', error);
-						}
-					}
-				});
-			}
-		} catch (error) {
-			console.error('Failed to load Excalidraw:', error);
-			errorMessage = error instanceof Error ? error.message : 'Unknown error';
-		}
-	});
+	// 		// Set up collaboration
+	// 		if ($socket) {
+	// 			$socket.on('excalidraw-update', (state: any) => {
+	// 				if (excalidrawAPI && state) {
+	// 					try {
+	// 						excalidrawAPI.updateScene(state);
+	// 					} catch (error) {
+	// 						console.error('Error updating scene:', error);
+	// 					}
+	// 				}
+	// 			});
 
-	onDestroy(() => {
-		if ($socket) {
-			$socket.off('excalidraw-update');
-		}
-	});
+	// 			$socket.on('init', (data: any) => {
+	// 				if (excalidrawAPI && data.excalidrawState) {
+	// 					try {
+	// 						excalidrawAPI.updateScene(data.excalidrawState);
+	// 					} catch (error) {
+	// 						console.error('Error updating scene from init:', error);
+	// 					}
+	// 				}
+	// 			});
+	// 		}
+	// 	} catch (error) {
+	// 		console.error('Failed to load Excalidraw:', error);
+	// 		errorMessage = error instanceof Error ? error.message : 'Unknown error';
+	// 	}
+	// });
 
-	function handleChange(elements: any, appState: any) {
-		if (!$socket || !elements) return;
+	// onDestroy(() => {
+	// 	if ($socket) {
+	// 		$socket.off('excalidraw-update');
+	// 	}
+	// });
 
-		// Broadcast changes to other users (throttled)
-		const state = {
-			elements,
-			appState: {
-				viewBackgroundColor: appState.viewBackgroundColor
-			}
-		};
+	// function handleChange(elements: any, appState: any) {
+	// 	if (!$socket || !elements) return;
 
-		$socket.emit('excalidraw-update', state);
-	}
+	// 	// Broadcast changes to other users (throttled)
+	// 	const state = {
+	// 		elements,
+	// 		appState: {
+	// 			viewBackgroundColor: appState.viewBackgroundColor
+	// 		}
+	// 	};
 
-	let changeTimeout: number;
-	function throttledChange(elements: any, appState: any) {
-		if (changeTimeout) {
-			clearTimeout(changeTimeout);
-		}
+	// 	$socket.emit('excalidraw-update', state);
+	// }
 
-		changeTimeout = setTimeout(() => {
-			handleChange(elements, appState);
-		}, 500) as unknown as number;
-	}
+	// let changeTimeout: number;
+	// function throttledChange(elements: any, appState: any) {
+	// 	if (changeTimeout) {
+	// 		clearTimeout(changeTimeout);
+	// 	}
 
-	function handleExcalidrawAPI(api: any) {
-		excalidrawAPI = api;
-		console.log('Excalidraw API initialized:', api);
-	}
+	// 	changeTimeout = setTimeout(() => {
+	// 		handleChange(elements, appState);
+	// 	}, 500) as unknown as number;
+	// }
+
+	// function handleExcalidrawAPI(api: any) {
+	// 	excalidrawAPI = api;
+	// 	console.log('Excalidraw API initialized:', api);
+	// }
 </script>
 
 <div class="drawing-container">
@@ -119,17 +122,10 @@
 		<h2>✏️ Collaborative Drawing</h2>
 	</div>
 
-	{#if isLoading}
-		<div class="loading">Loading Excalidraw...</div>
-	{:else if errorMessage}
-		<div class="error">
-			Failed to load drawing board: {errorMessage}
-			<br />
-			Please check the console for more details.
-		</div>
-	{:else}
-		<div class="excalidraw-wrapper" bind:this={excalidrawContainer}></div>
-	{/if}
+	<div class="disabled-message">
+		<p>Drawing feature is currently disabled.</p>
+		<p class="hint">This feature required React and Excalidraw dependencies which have been removed to simplify the project.</p>
+	</div>
 </div>
 
 <style>
@@ -155,18 +151,26 @@
 		overflow: hidden;
 	}
 
-	.loading,
-	.error {
+	.disabled-message {
 		flex: 1;
 		display: flex;
+		flex-direction: column;
 		align-items: center;
 		justify-content: center;
 		color: var(--text-secondary);
 		font-size: 1.1rem;
+		text-align: center;
+		padding: 2rem;
 	}
 
-	.error {
-		color: var(--error);
+	.disabled-message p {
+		margin: 0.5rem 0;
+	}
+
+	.disabled-message .hint {
+		font-size: 0.9rem;
+		opacity: 0.7;
+		max-width: 500px;
 	}
 
 	:global(.excalidraw) {

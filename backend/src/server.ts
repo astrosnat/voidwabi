@@ -85,8 +85,9 @@ const server = createServer((req, res) => {
   // CORS headers for all requests
   res.setHeader('Access-Control-Allow-Origin', process.env.FRONTEND_URL || 'http://localhost:5173');
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, X-Requested-With');
   res.setHeader('Access-Control-Allow-Credentials', 'true');
+  res.setHeader('Access-Control-Max-Age', '86400');
 
   // Handle OPTIONS preflight
   if (req.method === 'OPTIONS') {
@@ -203,18 +204,42 @@ const server = createServer((req, res) => {
     return;
   }
 
+  // Delete all messages endpoint
+  if (url.pathname === "/api/clear-messages" && req.method === "POST") {
+    try {
+      // Clear all messages from all channels
+      channelMessages.forEach((messages, channelId) => {
+        channelMessages.set(channelId, []);
+      });
+
+      // Clear pinned messages
+      pinnedMessages.forEach((pins, channelId) => {
+        pinnedMessages.set(channelId, new Set());
+      });
+
+      res.writeHead(200, { "Content-Type": "application/json" });
+      res.end(JSON.stringify({
+        success: true,
+        message: "All messages cleared from server"
+      }));
+    } catch (error) {
+      console.error('Clear messages error:', error);
+      res.writeHead(500, { "Content-Type": "application/json" });
+      res.end(JSON.stringify({ success: false, error: 'Failed to clear messages' }));
+    }
+    return;
+  }
+
   // Serve static files in production
   if (existsSync(STATIC_DIR)) {
-    let filePath = join(STATIC_DIR, url.pathname === "/" ? "index.html" : url.pathname);
+    // Decode the URL pathname to handle spaces and special characters
+    const decodedPathname = decodeURIComponent(url.pathname);
+    let filePath = join(STATIC_DIR, decodedPathname === "/" ? "index.html" : decodedPathname);
 
-    // If file doesn't exist, serve index.html for client-side routing
-    if (!existsSync(filePath)) {
-      filePath = join(STATIC_DIR, "index.html");
-    }
-
+    // Check if the file exists
     if (existsSync(filePath)) {
       const file = readFileSync(filePath);
-      const ext = filePath.split('.').pop();
+      const ext = filePath.split('.').pop()?.toLowerCase();
       const contentTypes: Record<string, string> = {
         'html': 'text/html',
         'js': 'application/javascript',
@@ -222,13 +247,31 @@ const server = createServer((req, res) => {
         'json': 'application/json',
         'png': 'image/png',
         'jpg': 'image/jpeg',
+        'jpeg': 'image/jpeg',
+        'gif': 'image/gif',
+        'webp': 'image/webp',
         'svg': 'image/svg+xml',
-        'ico': 'image/x-icon'
+        'ico': 'image/x-icon',
+        'mp4': 'video/mp4',
+        'webm': 'video/webm',
+        'pdf': 'application/pdf',
+        'zip': 'application/zip'
       };
 
-      res.writeHead(200, { "Content-Type": contentTypes[ext || 'html'] || 'text/plain' });
+      res.writeHead(200, { "Content-Type": contentTypes[ext || 'html'] || 'application/octet-stream' });
       res.end(file);
       return;
+    }
+
+    // If file doesn't exist and it's not an API or upload request, serve index.html for client-side routing
+    if (!url.pathname.startsWith('/api') && !url.pathname.startsWith('/uploads')) {
+      const indexPath = join(STATIC_DIR, "index.html");
+      if (existsSync(indexPath)) {
+        const file = readFileSync(indexPath);
+        res.writeHead(200, { "Content-Type": "text/html" });
+        res.end(file);
+        return;
+      }
     }
   }
 
