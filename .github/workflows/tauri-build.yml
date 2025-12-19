@@ -36,8 +36,8 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y libwebkit2gtk-4.1-dev build-essential curl wget file libssl-dev libayatana-appindicator3-dev librsvg2-dev
 
-      - name: Convert icon ICO to PNG
-        run: node scripts/convert-icon.js
+      - name: Setup icons
+        run: node scripts/setup-icons.js
 
       - name: Install frontend dependencies
         run: cd frontend && bun install

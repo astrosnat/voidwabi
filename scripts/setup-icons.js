@@ -1,0 +1,111 @@
+#!/usr/bin/env node
+
+import fs from 'fs';
+import path from 'path';
+import { fileURLToPath } from 'url';
+import { execSync } from 'child_process';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+const iconDir = path.join(__dirname, '../frontend/src-tauri/icons');
+const projectRoot = path.join(__dirname, '..');
+
+console.log('🎨 Tauri Icon Setup Tool');
+console.log('========================\n');
+
+// Ensure icons directory exists
+if (!fs.existsSync(iconDir)) {
+  fs.mkdirSync(iconDir, { recursive: true });
+  console.log(`✓ Created icons directory: ${iconDir}\n`);
+}
+
+// List current icon files
+console.log('Current icon files:');
+const files = fs.readdirSync(iconDir);
+if (files.length === 0) {
+  console.log('  (none)\n');
+} else {
+  files.forEach(f => console.log(`  - ${f}`));
+  console.log();
+}
+
+// Try to use tauri icon command if available
+console.log('Attempting to use Tauri CLI for icon generation...\n');
+
+try {
+  // Check if we can run tauri icon command
+  const sourceIcon = path.join(projectRoot, 'app-icon.png');
+
+  if (fs.existsSync(sourceIcon)) {
+    console.log(`Found source icon at: ${sourceIcon}`);
+    console.log('Running: tauri icon app-icon.png\n');
+
+    try {
+      execSync('tauri icon', {
+        cwd: path.join(projectRoot, 'frontend'),
+        stdio: 'inherit'
+      });
+      console.log('\n✓ Icons generated successfully via Tauri CLI');
+      process.exit(0);
+    } catch (e) {
+      console.log('⚠ Tauri CLI icon generation failed, will use fallback method\n');
+    }
+  } else {
+    console.log(`ℹ No source icon found at: ${sourceIcon}`);
+    console.log('You can place a 1024x1024px PNG at the project root as app-icon.png\n');
+  }
+} catch (e) {
+  console.log('⚠ Tauri CLI not available\n');
+}
+
+// Fallback: Ensure at least icon.ico exists
+const icoPath = path.join(iconDir, 'icon.ico');
+const pngPath = path.join(iconDir, 'icon.png');
+
+console.log('Fallback: Checking for required icon files...\n');
+
+if (!fs.existsSync(icoPath)) {
+  console.error('✗ icon.ico not found in icons directory');
+  console.error('  Please add your favicon (ICO format) to:', icoPath);
+  process.exit(1);
+}
+
+console.log('✓ icon.ico found');
+
+// Try to create PNG from ICO if it doesn't exist
+if (!fs.existsSync(pngPath)) {
+  console.log('Creating icon.png from icon.ico...');
+
+  try {
+    // Try using sharp if available
+    const sharp = await import('sharp').catch(() => null);
+
+    if (sharp) {
+      await sharp.default(icoPath)
+        .png()
+        .toFile(pngPath);
+      console.log('✓ Created icon.png using sharp');
+    } else {
+      // Fallback: copy ICO as PNG (not ideal but allows build to proceed)
+      fs.copyFileSync(icoPath, pngPath);
+      console.log('⚠ Created icon.png by copying icon.ico (basic fallback)');
+      console.log('  For best results, provide a proper PNG icon file\n');
+    }
+  } catch (err) {
+    console.error('⚠ Could not create icon.png automatically');
+    console.error(`  Error: ${err.message}`);
+    console.log('  Continuing build (may fail if PNG is required)\n');
+  }
+} else {
+  console.log('✓ icon.png already exists');
+}
+
+console.log('\n✓ Icon setup complete');
+console.log('\nRecommended next steps:');
+console.log('1. For best cross-platform support, use: tauri icon app-icon.png');
+console.log('   (from your project\'s frontend directory)');
+console.log('2. Or provide icon files in the icons directory for each platform:');
+console.log('   - Windows: icon.ico (with layers at 16, 32, 48, 64, 256px)');
+console.log('   - macOS: icon.icns (with 10 layers)');
+console.log('   - Linux: 32x32.png, 128x128.png, 128x128@2x.png');
