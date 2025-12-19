@@ -36,10 +36,18 @@
       "color": "#5865f2",
       "createdBy": "current-user",
       "id": "1766126885241-jwea7kpby"
+    },
+    {
+      "title": "as",
+      "startDate": 1766102400000,
+      "allDay": false,
+      "color": "#5865f2",
+      "createdBy": "current-user",
+      "id": "1766128099082-iu0ila977"
     }
   ],
   "diaryEntries": [],
   "projects": [],
   "sprints": [],
-  "lastUpdated": 1766128266147
+  "lastUpdated": 1766134573775
 }
