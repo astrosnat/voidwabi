@@ -7,6 +7,7 @@
 	import ForwardDialog from './ForwardDialog.svelte';
 	import ConfirmDialog from './ConfirmDialog.svelte';
 	import EmojiPicker from './EmojiPicker.svelte';
+	import LinkPreview from './LinkPreview.svelte';
 	import { parseMessage } from '$lib/markdown';
 	import '$lib/prism-theme.css';
 	export let messages: Message[];
@@ -209,6 +210,13 @@
 			}, 2000);
 		}
 	}
+	// Extract URLs from message text
+	function extractUrls(text: string): string[] {
+		const urlRegex = /(https?:\/\/[^\s<>"]+)/gi;
+		const matches = text.match(urlRegex);
+		return matches || [];
+	}
+
 	function getFileIcon(fileName?: string): string {
 		if (!fileName) return '📎';
 		const ext = fileName.toLowerCase().split('.').pop() || '';
@@ -372,7 +380,6 @@
 			<button class="action-btn" title="Add Reaction" on:click={(e) => openReactionPicker(e, message.id)}>
 				<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><path d="M8 14s1.5 2 4 2 4-2 4-2"></path><line x1="9" y1="9" x2="9.01" y2="9"></line><line x1="15" y1="9" x2="15.01" y2="9"></line></svg>
 			</button>
-			<span class="timestamp-action">{formatTime(message.timestamp)}</span>
 			<button class="action-btn" title="Forward" on:click={() => handleForward(message)}>
 				<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 17l5-5-5-5"/></svg>
 			</button>
@@ -409,6 +416,7 @@
 					{:else}
 						<span class="username">{message.user}</span>
 					{/if}
+					<span class="timestamp">{formatTime(message.timestamp)}</span>
 					{#if message.isPinned}
 						<span class="pin-badge" title="Pinned message">📌</span>
 					{/if}
@@ -620,6 +628,14 @@
 					{:else}
 						<div class="markdown-content">{@html parseMessage(message.text)}</div>
 					{/if}
+
+					<!-- Link Previews -->
+					{#if message.text}
+						{@const urls = extractUrls(message.text)}
+						{#each urls as url}
+							<LinkPreview {url} />
+						{/each}
+					{/if}
 				</div>
 			{/if}
 
@@ -771,14 +787,14 @@
 		gap: 0.75rem;
 		padding: 0.75rem;
 		border-radius: 8px;
-		background: var(--bg-secondary);
+		background: transparent;
 		margin-bottom: 0.5rem;
-		transition: all 0.2s;
+		transition: all 0.25s ease;
 		position: relative;
 	}
 
 	.message:hover {
-		background: var(--bg-tertiary);
+		background: rgba(26, 26, 46, 0.6);
 	}
 
 	.message.highlighted {
@@ -804,6 +820,7 @@
 	.message-avatar {
 		flex-shrink: 0;
 		cursor: pointer;
+		margin-top: 0.35rem;
 	}
 
 	.avatar {
@@ -833,9 +850,15 @@
 
 	.message-header {
 		display: flex;
-		justify-content: flex-start; /* Changed to flex-start */
+		justify-content: flex-start;
 		align-items: center;
 		margin-bottom: 0.375rem;
+		gap: 0;
+	}
+
+	.header-left {
+		display: flex;
+		align-items: center;
 		gap: 0.5rem;
 	}
 
@@ -849,8 +872,10 @@
 	}
 
 	.timestamp {
-		/* Moved timestamp to message-actions */
-		display: none;
+		font-size: 0.75rem;
+		color: var(--text-secondary);
+		margin-left: 0.5rem;
+		opacity: 0.7;
 	}
 
 	.message-actions {
@@ -913,6 +938,18 @@
 		width: 18px;
 		height: 18px;
 		stroke-width: 2;
+	}
+
+	.pin-badge {
+		font-size: 0.85rem;
+		margin-left: 0.25rem;
+	}
+
+	.edited-badge {
+		font-size: 0.75rem;
+		color: var(--text-secondary);
+		font-style: italic;
+		margin-left: 0.25rem;
 	}
 
 	.reply-preview {
@@ -1023,6 +1060,9 @@
 
 	.message-content {
 		min-height: 24px; /* Ensure minimum height for message content */
+		word-wrap: break-word;
+		word-break: break-word;
+		overflow-wrap: break-word;
 	}
 
 	.markdown-content :global(p) {
@@ -1051,11 +1091,33 @@
 		color: var(--color-info-hover);
 	}
 
+	.markdown-content :global(code) {
+		word-wrap: break-word;
+		word-break: break-all;
+		overflow-wrap: break-word;
+	}
+
+	.markdown-content :global(pre) {
+		word-wrap: break-word;
+		word-break: break-word;
+		overflow-wrap: break-word;
+		white-space: pre-wrap;
+	}
+
+	.markdown-content :global(pre code) {
+		word-wrap: break-word;
+		word-break: break-word;
+		overflow-wrap: break-word;
+		white-space: pre-wrap;
+	}
+
 	/* Emote styles */
 	.markdown-content :global(.emote) {
 		display: inline-block;
 		height: 1.5em;
 		width: auto;
+		max-width: 128px;
+		max-height: 128px;
 		vertical-align: middle;
 		margin: 0 0.1em;
 	}
@@ -1274,6 +1336,34 @@
 	.file-link {
 		text-decoration: none;
 		color: inherit;
+	}
+
+	/* Image & Video Download Links - Click Me! */
+	.image-download-link,
+	.video-download-link {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.3rem;
+		padding: 0.375rem 0.625rem;
+		margin-top: 0.75rem;
+		background: linear-gradient(135deg, rgba(255, 0, 255, 0.1) 0%, rgba(255, 105, 180, 0.1) 100%);
+		border: 1px solid rgba(255, 0, 255, 0.3);
+		border-radius: 4px;
+		color: #ff69b4;
+		text-decoration: none;
+		font-weight: 600;
+		font-size: 0.75rem;
+		transition: all 0.3s ease;
+		cursor: pointer;
+		box-shadow: 0 2px 8px rgba(255, 0, 255, 0.08);
+	}
+
+	.image-download-link:hover,
+	.video-download-link:hover {
+		background: linear-gradient(135deg, rgba(255, 0, 255, 0.25) 0%, rgba(255, 105, 180, 0.25) 100%);
+		border-color: rgba(255, 0, 255, 0.6);
+		color: #ff00ff;
+		box-shadow: 0 3px 12px rgba(255, 0, 255, 0.2);
 	}
 
 	.more-overlay {
@@ -1637,6 +1727,9 @@
 		.markdown-content {
 			font-size: 16px;
 			line-height: 1.5;
+			word-wrap: break-word;
+			word-break: break-word;
+			overflow-wrap: break-word;
 		}
 
 		.markdown-content :global(p) {
@@ -1679,6 +1772,9 @@
 
 		.markdown-content {
 			font-size: 0.8rem;
+			word-wrap: break-word;
+			word-break: break-word;
+			overflow-wrap: break-word;
 		}
 
 		.inline-image,
@@ -1711,6 +1807,9 @@
     .markdown-content {
         font-size: 16px;
         line-height: 1.5;
+        word-wrap: break-word;
+        word-break: break-word;
+        overflow-wrap: break-word;
     }
     .markdown-content :global(p) {
         line-height: 1.5;

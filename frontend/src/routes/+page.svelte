@@ -25,6 +25,8 @@
 	let dmOtherUser: User | null = null;
 	
 	// --- UI & Layout State ---
+	type SidebarMode = 'normal' | 'compact' | 'closed';
+	let sidebarMode: SidebarMode = 'normal';
 	let channelSidebarWidth = 240;
 	let userPanelWidth = 250;
 	let dmPanelWidth = 350;
@@ -34,6 +36,8 @@
 	let isMobile = false;
 	let showMobileChannels = false;
 	let mql: MediaQueryList;
+	let resizeStartX = 0;
+	let resizeStartWidth = 0;
 	
 	// --- Reactive Calculations ---
 	// These are now purely for desktop visibility, mobile uses different classes
@@ -75,18 +79,42 @@
 		loggedIn = true;
 	}
 	
-	// Desktop resizing
-	function startResizeChannel(e: MouseEvent) { isResizingChannel = true; e.preventDefault(); }
-	function startResizeUser(e: MouseEvent) { isResizingUser = true; e.preventDefault(); }
-	function startResizeDM(e: MouseEvent) { isResizingDM = true; e.preventDefault(); }
+	// Desktop resizing with snap points
+	function startResizeChannel(e: MouseEvent) {
+		if (sidebarMode === 'closed') return;
+		isResizingChannel = true;
+		resizeStartX = e.clientX;
+		resizeStartWidth = channelSidebarWidth;
+		e.preventDefault();
+	}
+
+	function startResizeUser(e: MouseEvent) {
+		isResizingUser = true;
+		resizeStartX = e.clientX;
+		resizeStartWidth = userPanelWidth;
+		e.preventDefault();
+	}
+
+	function startResizeDM(e: MouseEvent) {
+		isResizingDM = true;
+		resizeStartX = e.clientX;
+		resizeStartWidth = dmPanelWidth;
+		e.preventDefault();
+	}
 
 	function handleMouseMove(e: MouseEvent) {
 		if (isResizingChannel) {
-			channelSidebarWidth = Math.max(180, Math.min(e.clientX, 400));
+			const delta = e.clientX - resizeStartX;
+			const newWidth = resizeStartWidth + delta;
+			channelSidebarWidth = Math.max(0, Math.min(newWidth, 400));
 		} else if (isResizingUser) {
-			userPanelWidth = Math.max(200, Math.min(window.innerWidth - e.clientX, 500));
+			const delta = resizeStartX - e.clientX;
+			const newWidth = resizeStartWidth + delta;
+			userPanelWidth = Math.max(200, Math.min(newWidth, 500));
 		} else if (isResizingDM) {
-			dmPanelWidth = Math.max(300, Math.min(window.innerWidth - e.clientX, 600));
+			const delta = resizeStartX - e.clientX;
+			const newWidth = resizeStartWidth + delta;
+			dmPanelWidth = Math.max(300, Math.min(newWidth, 600));
 		}
 	}
 
@@ -94,6 +122,29 @@
 		isResizingChannel = false;
 		isResizingUser = false;
 		isResizingDM = false;
+	}
+
+	function toggleSidebarMode() {
+		if (sidebarMode === 'normal') {
+			sidebarMode = 'compact';
+			channelSidebarWidth = 70;
+		} else if (sidebarMode === 'compact') {
+			sidebarMode = 'closed';
+			channelSidebarWidth = 0;
+		} else {
+			sidebarMode = 'normal';
+			channelSidebarWidth = 240;
+		}
+	}
+
+	function toggleSidebarClosed() {
+		if (sidebarMode === 'closed') {
+			sidebarMode = 'normal';
+			channelSidebarWidth = 240;
+		} else {
+			sidebarMode = 'closed';
+			channelSidebarWidth = 0;
+		}
 	}
 	
 	// Panel State Transitions
@@ -170,16 +221,24 @@
 
 	<div class="app-container" class:resizing={isResizingChannel || isResizingUser || isResizingDM}>
 		<!-- Channel Sidebar (Left) -->
-		<div 
-			class="channel-sidebar-container" 
-			style:width="{channelSidebarWidth}px"
-			class:mobile-visible={isMobile && showMobileChannels}
-		>
-			<ChannelSidebar on:close={() => showMobileChannels = false} bind:activeView />
+		{#if sidebarMode !== 'closed'}
+			<div
+				class="channel-sidebar-container"
+				style:width="{channelSidebarWidth}px"
+				class:mobile-visible={isMobile && showMobileChannels}
+				class:compact={sidebarMode === 'compact'}
+			>
+				<ChannelSidebar on:close={() => showMobileChannels = false} on:toggleMode={toggleSidebarMode} on:toggleClosed={toggleSidebarClosed} bind:activeView sidebarWidth={channelSidebarWidth} />
+				{#if !isMobile && sidebarMode === 'normal'}
+					<div class="resize-handle resize-handle-channel" on:mousedown={startResizeChannel}></div>
+				{/if}
+			</div>
+		{:else}
+			<!-- Sidebar Toggle Button (when closed) -->
 			{#if !isMobile}
-				<div class="resize-handle resize-handle-channel" on:mousedown={startResizeChannel}></div>
+				<button class="sidebar-toggle-btn" on:click={toggleSidebarMode} title="Open sidebar">☰</button>
 			{/if}
-		</div>
+		{/if}
 
 		<!-- Main Content -->
 		<div class="main-content">
@@ -188,7 +247,7 @@
 		</div>
 		
 		<!-- User Panel (Right) -->
-		<div 
+		<div
 			class="user-panel-container"
 			class:visible={showUserPanel}
 			style:width="{showUserPanel ? userPanelWidth : 0}px"
@@ -199,9 +258,9 @@
 				<div class="resize-handle resize-handle-user" on:mousedown={startResizeUser}></div>
 			{/if}
 		</div>
-		
+
 		<!-- DM Panel (Far Right) -->
-		<div 
+		<div
 			class="dm-panel-container"
 			class:visible={showDMPanel}
 			style:width="{showDMPanel ? dmPanelWidth : 0}px"
@@ -212,7 +271,7 @@
 				<div class="resize-handle resize-handle-dm" on:mousedown={startResizeDM}></div>
 			{/if}
 		</div>
-		
+
 		<!-- Desktop-Only Buttons -->
 		{#if !isMobile}
 			<button
@@ -257,6 +316,33 @@
 	.channel-sidebar-container {
 		flex-shrink: 0;
 		position: relative;
+		overflow: hidden;
+		transition: width 0.3s ease-out;
+	}
+
+	.sidebar-toggle-btn {
+		flex-shrink: 0;
+		width: 30px;
+		height: 100%;
+		background: var(--bg-secondary);
+		border: 1px solid var(--border);
+		border-radius: 0;
+		cursor: pointer;
+		font-size: 0.9rem;
+		color: var(--text-secondary);
+		transition: all 0.2s ease;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		z-index: 100;
+		opacity: 0.7;
+	}
+
+	.sidebar-toggle-btn:hover {
+		background: var(--bg-tertiary);
+		color: var(--text-primary);
+		opacity: 1;
+		box-shadow: inset 0 0 4px rgba(123, 104, 238, 0.1);
 	}
 
 	/* Desktop Panel Styles */
@@ -273,42 +359,57 @@
 		position: absolute;
 		top: 0;
 		bottom: 0;
-		width: 6px;
+		width: 12px;
 		cursor: col-resize;
 		z-index: 100;
 		transition: background 0.2s;
+		right: -6px;
+		background: transparent;
 	}
-	.resize-handle:hover { background: var(--accent); opacity: 0.5; }
-	.resize-handle-channel { right: -3px; }
+	.resize-handle:hover {
+		background: var(--accent);
+		opacity: 0.6;
+	}
+	.resize-handle-channel { }
 	.resize-handle-user { left: -3px; }
 	.resize-handle-dm { left: -3px; }
 	
 	.user-panel-toggle {
-		position: absolute;
+		position: fixed;
+		right: 0;
 		top: 50%;
 		transform: translateY(-50%);
-		width: 28px;
-		height: 80px;
+		width: 20px;
+		height: 60px;
 		background: var(--bg-secondary);
-		border: none;
+		border: 1px solid var(--border);
 		border-radius: 8px 0 0 8px;
 		cursor: pointer;
-		font-size: 1.2rem;
+		font-size: 0.75rem;
 		color: var(--text-secondary);
-		transition: all 0.3s ease;
-		z-index: 999;
-		opacity: 0.6;
+		transition: all 0.2s ease;
+		z-index: 99;
+		opacity: 0.5;
 		display: flex;
 		align-items: center;
 		justify-content: center;
+		padding: 0;
 	}
-	.user-panel-toggle:hover { opacity: 1; background: var(--accent); }
+	.user-panel-toggle:hover {
+		opacity: 1;
+		background: var(--bg-tertiary);
+		box-shadow: inset 0 0 4px rgba(123, 104, 238, 0.15);
+	}
+	.user-panel-toggle.open {
+		opacity: 0.7;
+		background: var(--bg-secondary);
+	}
 
 	/* --- Mobile Styles --- */
 	.mobile-bottom-nav { display: none; }
 	
 	@media (max-width: 768px) {
-		.app-container { height: calc(100vh - 56px); }
+		.app-container { height: calc(100dvh - 56px); }
 		.user-panel-toggle, .resize-handle { display: none; }
 
 		.channel-sidebar-container,
@@ -319,7 +420,7 @@
 			top: 0;
 			left: 0;
 			width: 100% !important; /* Override inline style */
-			height: calc(100vh - 56px);
+			height: calc(100dvh - 56px);
 			z-index: 1500;
 			background: var(--bg-primary);
 		}

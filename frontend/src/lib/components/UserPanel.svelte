@@ -283,12 +283,16 @@
 	}
 
 	.panel-header {
-		padding: 0.75rem 1rem;
-		border-bottom: 1px solid var(--border);
-		height: 58px;
+		flex-shrink: 0;
 		display: flex;
 		align-items: center;
 		justify-content: space-between;
+		padding: 0.625rem 1rem;
+		background: linear-gradient(to bottom, rgba(36, 36, 62, 0.8), rgba(26, 26, 46, 0.6));
+		border-bottom: 1px solid rgba(255, 0, 255, 0.1);
+		height: 52px;
+		box-sizing: border-box;
+		z-index: 2;
 	}
 
 	.panel-header h3 {
@@ -516,7 +520,7 @@
 	/* ========== MOBILE STYLES ========== */
 	@media (max-width: 768px) {
 		.user-panel {
-			height: calc(100vh - 56px);
+			height: calc(100dvh - 56px);
 		}
 
 		.panel-header {

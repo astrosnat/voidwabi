@@ -124,7 +124,10 @@
 				{/if}
 				<div class="dm-user-details">
 					<span class="dm-username">{otherUser.username}</span>
-					<span class="dm-status">{otherUser.status || 'active'}</span>
+					<div class="dm-user-status">
+						<span class="dm-status-indicator" class:online={otherUser.status === 'active'} class:away={otherUser.status === 'away'} class:busy={otherUser.status === 'busy'}></span>
+						<span class="dm-status-text">{otherUser.status || 'active'}</span>
+					</div>
 				</div>
 			</div>
 		{:else}
@@ -198,13 +201,16 @@
 	}
 
 	.dm-header {
+		flex-shrink: 0;
 		display: flex;
 		align-items: center;
 		justify-content: space-between;
-		padding: 1rem;
-		background: var(--bg-secondary);
-		border-bottom: 2px solid var(--border);
-		min-height: 60px;
+		padding: 0.625rem 1rem;
+		background: linear-gradient(to bottom, rgba(36, 36, 62, 0.8), rgba(26, 26, 46, 0.6));
+		border-bottom: 1px solid rgba(255, 0, 255, 0.1);
+		height: 52px;
+		box-sizing: border-box;
+		z-index: 2;
 	}
 
 	.dm-user-info {
@@ -215,24 +221,24 @@
 	}
 
 	.dm-avatar {
-		width: 40px;
-		height: 40px;
+		width: 1.25rem;
+		height: 1.25rem;
 		border-radius: 50%;
 		object-fit: cover;
-		border: 2px solid var(--accent);
+		border: 1px solid var(--accent);
 	}
 
 	.dm-avatar-placeholder {
-		width: 40px;
-		height: 40px;
+		width: 1.25rem;
+		height: 1.25rem;
 		border-radius: 50%;
 		display: flex;
 		align-items: center;
 		justify-content: center;
 		font-weight: bold;
 		color: white;
-		font-size: 1rem;
-		border: 2px solid var(--accent);
+		font-size: 0.65rem;
+		border: 1px solid var(--accent);
 	}
 
 	.dm-user-details {
@@ -247,7 +253,32 @@
 		color: var(--text-primary);
 	}
 
-	.dm-status {
+	.dm-user-status {
+		display: flex;
+		align-items: center;
+		gap: 0.35rem;
+	}
+
+	.dm-status-indicator {
+		width: 6px;
+		height: 6px;
+		border-radius: 50%;
+		flex-shrink: 0;
+	}
+
+	.dm-status-indicator.online {
+		background-color: var(--status-online);
+	}
+
+	.dm-status-indicator.away {
+		background-color: var(--status-away);
+	}
+
+	.dm-status-indicator.busy {
+		background-color: var(--status-busy);
+	}
+
+	.dm-status-text {
 		font-size: 0.75rem;
 		color: var(--text-secondary);
 		text-transform: capitalize;
@@ -268,6 +299,11 @@
 		padding: 0.25rem 0.5rem;
 		transition: all 0.2s;
 		border-radius: 4px;
+		opacity: 0.7;
+	}
+
+	.dm-header:hover .dm-close-btn {
+		opacity: 1;
 	}
 
 	.dm-close-btn:hover {
@@ -278,10 +314,11 @@
 	.dm-messages {
 		flex: 1;
 		overflow-y: auto;
-		padding: 1rem;
+		padding: 1.5rem 1rem 1rem 1rem;
 		display: flex;
 		flex-direction: column;
-		gap: 0.5rem;
+		gap: 0.75rem;
+		min-height: 0;
 	}
 
 	.dm-empty {
@@ -295,30 +332,50 @@
 
 	.dm-input-container {
 		display: flex;
-		gap: 0.5rem;
-		padding: 1rem;
-		background: var(--bg-secondary);
-		border-top: 2px solid var(--border);
+		align-items: center;
+		background: transparent;
+		border-radius: 8px;
+		padding: 0.25rem;
+		gap: 0.25rem;
+		transition: all 0.3s ease;
+	}
+
+	.dm-input-container:hover {
+		background: rgba(26, 26, 46, 0.4);
+		backdrop-filter: blur(10px);
+		box-shadow: 0 8px 32px 0 rgba(123, 104, 238, 0.15);
+	}
+
+	.dm-input-container:focus-within {
+		background: rgba(26, 26, 46, 0.5);
+		backdrop-filter: blur(12px);
+		box-shadow: 0 8px 32px 0 rgba(255, 0, 255, 0.2);
 	}
 
 	.dm-input {
 		flex: 1;
-		padding: 0.75rem;
-		background: var(--bg-tertiary);
-		border: 2px solid var(--border);
-		border-radius: 8px;
-		color: var(--text-primary);
-		font-size: 0.95rem;
-		font-family: inherit;
-		resize: none;
-		max-height: 200px;
+		min-height: 28px;
+		max-height: 120px;
 		overflow-y: auto;
-		transition: border-color 0.2s;
+		resize: none;
+		font-family: inherit;
+		line-height: 1.5;
+		padding: 0.5rem;
+		border: none;
+		background: transparent;
+		color: var(--text-primary);
+		outline: none;
+		font-size: 1rem;
+		-ms-overflow-style: none;
+		scrollbar-width: none;
+	}
+
+	.dm-input::-webkit-scrollbar {
+		display: none;
 	}
 
 	.dm-input:focus {
 		outline: none;
-		border-color: var(--accent);
 	}
 
 	.dm-input::placeholder {
@@ -326,22 +383,20 @@
 	}
 
 	.dm-send-btn {
-		padding: 0.75rem 1rem;
 		background: var(--accent);
-		border: none;
-		border-radius: 8px;
 		color: white;
-		font-size: 1rem;
+		border: none;
+		padding: 0 1rem;
+		height: 36px;
+		border-radius: 6px;
+		font-weight: 600;
 		cursor: pointer;
 		transition: all 0.2s;
-		display: flex;
-		align-items: center;
-		justify-content: center;
+		font-size: 0.9rem;
 	}
 
 	.dm-send-btn:hover:not(:disabled) {
-		background: var(--accent-hover);
-		transform: translateY(-2px);
+		box-shadow: inset 0 0 8px rgba(255, 0, 255, 0.2);
 	}
 
 	.dm-send-btn:disabled {
@@ -364,6 +419,11 @@
 		transition: all 0.2s;
 		border-radius: 4px;
 		margin-right: 0.5rem;
+		opacity: 0.7;
+	}
+
+	.dm-header:hover .dm-back-btn {
+		opacity: 1;
 	}
 
 	.dm-back-btn:hover {
@@ -445,7 +505,7 @@
 	/* ========== MOBILE STYLES ========== */
 	@media (max-width: 768px) {
 		.dm-panel {
-			height: calc(100vh - 65px); /* Account for bottom nav */
+			height: calc(100dvh - 65px); /* Account for bottom nav */
 			border-left: none;
 		}
 

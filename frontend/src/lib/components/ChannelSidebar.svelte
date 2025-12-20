@@ -16,6 +16,9 @@
 	}
 
 	export let activeView: 'chat' | 'screen' = 'chat';
+	export let sidebarWidth = 240;
+
+	$: isNarrow = sidebarWidth < 180;
 
 	let newChannelName = '';
 	let showCreateInput = false;
@@ -98,6 +101,24 @@
 		updateProfile(newStatus, undefined, undefined);
 		showStatusPopup = false;
 	}
+
+	function dispatchToggleMode() {
+		dispatch('toggleMode');
+	}
+
+	function dispatchToggleClosed() {
+		dispatch('toggleClosed');
+	}
+
+	function getChannelAbbreviation(name: string): string {
+		// Handle emoji syntax like :meat:cooking
+		const emojiMatch = name.match(/^(:[\w_]+:)/);
+		if (emojiMatch) {
+			return emojiMatch[1]; // Return just the emoji, e.g., :meat:
+		}
+		// Otherwise return first character
+		return name.charAt(0);
+	}
 </script>
 
 <div class="channel-sidebar">
@@ -106,24 +127,27 @@
 		<div class="logo">
 			<img src="/wabi-logo.png" alt="Wabi" class="logo-img" />
 		</div>
-		<a href="/business" class="hub-link-header" title="Business Hub">
-			<svg width="20" height="20" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
-		</a>
+		{#if !isNarrow}
+			<button
+				class="sidebar-collapse-btn"
+				on:click={dispatchToggleClosed}
+				title="Close sidebar"
+			>
+				‹
+			</button>
+		{/if}
 	</div>
 
-	<div class="sidebar-header">
-		<h3>Text Channels</h3>
-		<div class="header-buttons">
-			<button
-				class="screen-share-icon-btn"
-				class:active={activeView === 'screen'}
-				on:click={() => activeView = 'screen'}
-				title="Screen Share"
-			>
-				📺
-			</button>
-			<button class="add-btn" on:click={() => showCreateInput = !showCreateInput} title="Create channel">+</button>
-		</div>
+	<div class="sidebar-header" class:narrow={isNarrow}>
+		<button
+			class="screen-share-icon-btn"
+			class:active={activeView === 'screen'}
+			on:click={() => activeView = 'screen'}
+			title="Screen Share"
+		>
+			📺
+		</button>
+		<button class="add-btn" on:click={() => showCreateInput = !showCreateInput} title="Create channel">+</button>
 	</div>
 
 	{#if showCreateInput}
@@ -143,13 +167,19 @@
 		<!-- Public Channels -->
 		{#each publicChannels as channel (channel.id)}
 			<div class="channel-item" class:active={$currentChannel === channel.id}>
-				<button class="channel-btn" on:click={() => handleChannelClick(channel.id)}>
-					<span class="hash">#</span>
-					{channel.name}
-					{#if channel.autoDeleteAfter}
+				<button class="channel-btn" class:narrow={isNarrow} on:click={() => handleChannelClick(channel.id)} title={channel.name}>
+					{#if !isNarrow}
+						<span class="hash">#</span>
+					{/if}
+					{#if isNarrow}
+						<span class="channel-abbrev">{getChannelAbbreviation(channel.name)}</span>
+					{:else}
+						{channel.name}
+					{/if}
+					{#if channel.autoDeleteAfter && !isNarrow}
 						<span class="auto-delete-indicator" title="Auto-delete: {channel.autoDeleteAfter}">⏱️</span>
 					{/if}
-					{#if $channelUnreadCounts[channel.id] && $currentChannel !== channel.id}
+					{#if $channelUnreadCounts[channel.id] && $currentChannel !== channel.id && !isNarrow}
 						<span class="unread-badge">{formatBadge($channelUnreadCounts[channel.id])}</span>
 					{/if}
 				</button>
@@ -167,16 +197,24 @@
 
 		<!-- Group Chats -->
 		{#if groupChannels.length > 0}
-			<div class="section-header">Group Chats</div>
+			{#if !isNarrow}
+				<div class="section-header">Group Chats</div>
+			{/if}
 			{#each groupChannels as channel (channel.id)}
 				<div class="channel-item" class:active={$currentChannel === channel.id}>
-					<button class="channel-btn" on:click={() => handleChannelClick(channel.id)}>
-						<span class="group-icon">👥</span>
-						{channel.name}
-						{#if channel.autoDeleteAfter}
+					<button class="channel-btn" class:narrow={isNarrow} on:click={() => handleChannelClick(channel.id)} title={channel.name}>
+						{#if !isNarrow}
+							<span class="group-icon">👥</span>
+						{/if}
+						{#if isNarrow}
+							<span class="channel-abbrev">{getChannelAbbreviation(channel.name)}</span>
+						{:else}
+							{channel.name}
+						{/if}
+						{#if channel.autoDeleteAfter && !isNarrow}
 							<span class="auto-delete-indicator" title="Auto-delete: {channel.autoDeleteAfter}">⏱️</span>
 						{/if}
-						{#if $channelUnreadCounts[channel.id] && $currentChannel !== channel.id}
+						{#if $channelUnreadCounts[channel.id] && $currentChannel !== channel.id && !isNarrow}
 							<span class="unread-badge">{formatBadge($channelUnreadCounts[channel.id])}</span>
 						{/if}
 					</button>
@@ -191,7 +229,7 @@
 	</div>
 
 	{#if $currentUser}
-		<div class="profile-card">
+		<div class="profile-card" class:narrow={isNarrow}>
 			<div class="profile-info">
 				<button class="avatar-container" on:click={() => showSettings = true}>
 					{#if $currentUser.profilePicture}
@@ -203,7 +241,7 @@
 					{/if}
 					<div class="status-indicator" class:online={$currentUser.status === 'active'} class:away={$currentUser.status === 'away'} class:busy={$currentUser.status === 'busy'}></div>
 				</button>
-				<div class="user-details">
+				<div class="user-details" class:hidden={isNarrow}>
 					<!-- svelte-ignore a11y-click-events-have-key-events -->
 					<!-- svelte-ignore a11y-no-static-element-interactions -->
 					<div class="username" on:click={toggleStatusPopup}>{$currentUser.username}</div>
@@ -227,7 +265,7 @@
 					</button>
 				</div>
 			{/if}
-			<div class="profile-controls">
+			<div class="profile-controls" class:hidden={isNarrow}>
 				<button
 					class="control-btn"
 					class:active={isMuted}
@@ -406,7 +444,29 @@
 	.logo-img {
 		height: 32px;
 		width: auto;
-		filter: invert(1) drop-shadow(2px 2px 4px rgba(0, 0, 0, 0.3));
+		filter: invert(1); /*drop-shadow(2px 2px 4px rgba(0, 0, 0, 0.3));*/
+	}
+
+	.sidebar-collapse-btn {
+		flex-shrink: 0;
+		width: 28px;
+		height: 28px;
+		background: transparent;
+		border: none;
+		color: var(--text-secondary);
+		font-size: 1.5rem;
+		cursor: pointer;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		transition: all 0.2s;
+		border-radius: 4px;
+	}
+
+	.sidebar-collapse-btn:hover {
+		background: var(--bg-secondary);
+		color: var(--text-primary);
+		box-shadow: inset 0 0 8px rgba(123, 104, 238, 0.15);
 	}
 
 	.hub-link-header {
@@ -421,6 +481,7 @@
 	.hub-link-header:hover {
 		background: var(--bg-secondary);
 		color: var(--accent);
+		box-shadow: inset 0 0 8px rgba(123, 104, 238, 0.15);
 	}
 	.hub-link-header svg {
 		stroke: currentColor;
@@ -442,25 +503,23 @@
 	.settings-btn:hover {
 		color: var(--text-primary);
 		background: var(--bg-secondary);
-		transform: rotate(45deg);
+		box-shadow: inset 0 0 8px rgba(123, 104, 238, 0.15);
 	}
 
 	.sidebar-header {
-		padding: 0.75rem 1rem;
+		padding: 0.5rem;
 		border-bottom: 1px solid var(--border);
 		display: flex;
-		justify-content: space-between;
+		justify-content: flex-start;
 		align-items: center;
-		height: 58px;
+		gap: 0.5rem;
+		height: auto;
+		min-height: 48px;
 	}
 
-	.sidebar-header h3 {
-		font-size: 0.875rem;
-		font-weight: 600;
-		text-transform: uppercase;
-		color: var(--text-secondary);
-		margin: 0;
-		flex: 1;
+	.sidebar-header.narrow {
+		flex-direction: column;
+		align-items: flex-start;
 	}
 
 	.header-buttons {
@@ -492,6 +551,7 @@
 		background: var(--bg-secondary);
 		color: var(--text-primary);
 		opacity: 1;
+		box-shadow: inset 0 0 8px rgba(123, 104, 238, 0.15);
 	}
 
 	.screen-share-icon-btn.active {
@@ -506,6 +566,7 @@
 		display: flex;
 		flex-direction: column;
 		gap: 0.5rem;
+		border-radius: 10px;
 	}
 
 	.create-channel input {
@@ -513,7 +574,7 @@
 		padding: 0.5rem;
 		font-size: 0.875rem;
 		border: none;
-		border-radius: 0;
+		border-radius: 10px;
 		background: var(--bg-secondary);
 		color: var(--text-primary);
 	}
@@ -524,7 +585,7 @@
 		background: var(--accent);
 		color: white;
 		border: none;
-		border-radius: 0;
+		border-radius: 10px;
 		cursor: pointer;
 		width: 100%;
 	}
@@ -569,6 +630,27 @@
 	.channel-btn:hover {
 		background: var(--bg-secondary);
 		color: var(--text-primary);
+		transform: none;
+	}
+
+	.channel-btn.narrow {
+		gap: 0;
+		padding: 0.5rem 0.25rem;
+	}
+
+	.channel-btn.narrow .hash,
+	.channel-btn.narrow .group-icon {
+		display: block;
+		flex: 0 0 auto;
+	}
+
+	.channel-btn.narrow > :nth-child(2) {
+		display: none;
+	}
+
+	.channel-btn.narrow .auto-delete-indicator,
+	.channel-btn.narrow .unread-badge {
+		display: none;
 	}
 
 	.hash,
@@ -595,9 +677,9 @@
 	.pin-btn,
 	.delete-btn {
 		opacity: 0;
-		width: 20px;
+		width: 10px;
 		height: 20px;
-		border-radius: 0;
+		border-radius: 10px;
 		background: none;
 		border: none;
 		color: var(--text-secondary);
@@ -642,7 +724,7 @@
 		border: none;
 		color: var(--text-secondary);
 		cursor: pointer;
-		border-radius: 0;
+		border-radius: 10px;
 		transition: all 0.2s;
 		font-size: 0.9rem;
 		width: 100%;
@@ -668,10 +750,17 @@
 		border-top: 1px solid var(--border);
 		padding: 0.625rem;
 		display: flex;
+		flex-direction: row;
 		align-items: center;
 		gap: 0.5rem;
 		height: 52px;
 		position: relative;
+	}
+
+	.profile-card.narrow {
+		flex-direction: column;
+		align-items: flex-start;
+		height: auto;
 	}
 
 	.profile-info {
@@ -738,6 +827,10 @@
 		display: flex;
 		flex-direction: column;
 		gap: 2px;
+	}
+
+	.user-details.hidden {
+		display: none;
 	}
 
 	.username {
@@ -812,6 +905,10 @@
 		flex-shrink: 1;
 	}
 
+	.profile-controls.hidden {
+		display: none;
+	}
+
 	.control-btn {
 		width: 28px;
 		height: 28px;
@@ -836,6 +933,13 @@
 	.control-btn.active {
 		background: var(--color-danger);
 		color: white;
+	}
+
+	/* Channel abbreviation in compact mode */
+	.channel-abbrev {
+		font-size: 0.9rem;
+		font-weight: 600;
+		color: inherit;
 	}
 
 	/* Auto-delete indicator */
@@ -966,7 +1070,7 @@
 		font-size: 0.875rem;
 		cursor: pointer;
 		padding: 0.25rem 0.5rem;
-		border-radius: 4px;
+		border-radius: 10px;
 		transition: all 0.2s;
 		opacity: 0;
 	}
@@ -1016,7 +1120,7 @@
 	/* ========== MOBILE STYLES ========== */
 	@media (max-width: 768px) {
 		.channel-sidebar {
-			height: calc(100vh - 56px);
+			height: calc(100dvh - 56px);
 		}
 
 		.mobile-close-btn {
@@ -1082,12 +1186,14 @@
 			padding: 0.5rem;
 			font-size: 16px;
 			min-height: 36px;
+			border-radius: 10px;
 		}
 
 		.create-channel button {
 			padding: 0.5rem;
 			min-height: 36px;
 			font-size: 0.8rem;
+			border-radius: 10px;
 		}
 
 		/* Compact profile card */
