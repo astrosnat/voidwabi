@@ -2,10 +2,28 @@ services:
   - type: web
     name: wabi-backend
     runtime: node
-    buildCommand: cd frontend && bun install && bun run build && cd ../backend && bun install
+    
+    # Build the frontend, then backend
+    buildCommand: |
+      cd frontend && \
+      bun install && \
+      bun run build && \
+      cd ../backend && \
+      bun install
+    
+    # Start the backend server (serves both frontend + API)
     startCommand: cd backend && bun run src/server.ts
+    
+    # Environment variables
     envVars:
       - key: PORT
-        value: 3000
+        value: 10000
+      
+      # Frontend URL for CORS (Render domain)
       - key: FRONTEND_URL
         value: https://wabi.onrender.com
+      
+      # Public URL for Socket.IO auto-detection
+      - key: PUBLIC_URL
+        value: https://wabi.onrender.com
+

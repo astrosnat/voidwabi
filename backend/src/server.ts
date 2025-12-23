@@ -853,7 +853,8 @@ const server = createServer((req, res) => {
 });
 
 // Start HTTP server
-server.listen(PORT);
+server.listen(PORT, '0.0.0.0');
+console.log('[Server] Listening on 0.0.0.0:' + PORT);
 
 // Create Socket.IO server attached to HTTP server
 const io = new Server(server, {
