@@ -5,11 +5,17 @@ services:
     
     # Build the frontend, then backend dependencies
     buildCommand: |
+      set -e
+      echo "=== Building frontend ===" && \
       cd frontend && \
       npm install && \
       npm run build && \
+      ls -la build/ && \
+      echo "=== Frontend built successfully ===" && \
       cd ../backend && \
-      npm install
+      echo "=== Installing backend dependencies ===" && \
+      npm install && \
+      echo "=== Build complete ==="
     
     # Start the backend server (serves both frontend + API)
     # Using Node directly since Render doesn't have Bun by default
