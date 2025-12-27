@@ -1,10 +1,13 @@
+# Build stage
 FROM oven/bun:1 as builder
 
 WORKDIR /app
 
 # Copy package files
 COPY package.json ./
+COPY bun.lock ./
 COPY frontend/package.json ./frontend/
+COPY frontend/package-lock.json ./frontend/
 COPY backend/package.json ./backend/
 
 # Install dependencies
@@ -18,27 +21,28 @@ COPY backend ./backend
 # Build frontend
 RUN cd frontend && bun run build
 
-# Build backend
-RUN cd backend && bun run build
-
 # Production stage
-FROM debian:bookworm-slim
+FROM oven/bun:1
 
 WORKDIR /app
 
-# Copy built artifacts
-COPY --from=builder /app/backend/community-chat-server .
-COPY --from=builder /app/frontend/build ./static
+# Copy built frontend
+COPY --from=builder /app/frontend/build ./frontend/build
 
-# Make binary executable
-RUN chmod +x community-chat-server
+# Copy backend source and dependencies
+COPY --from=builder /app/backend ./backend
+COPY --from=builder /app/bun.lock ./
+
+# Set environment
+ENV NODE_ENV=production
+ENV PORT=3000
 
 # Expose port
 EXPOSE 3000
 
-# Set environment variables
-ENV PORT=3000
-ENV FRONTEND_URL=http://localhost:5173
+# Health check
+HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
+  CMD bun -e "const r = await fetch('http://localhost:3000/health'); process.exit(r.ok ? 0 : 1)"
 
-# Run the application
-CMD ["./community-chat-server"]
+# Start backend server
+CMD ["bun", "run", "backend/src/server.ts"]

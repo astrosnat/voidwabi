@@ -17,7 +17,8 @@
 		handleCallIceCandidate,
 		createCallOffer,
 		localStream,
-		connectionState
+		connectionState,
+		removeCall
 	} from '$lib/calling';
 	import { showCallNotification, playCallRingtone } from '$lib/notifications';
 
@@ -61,12 +62,15 @@
 
 		$socket.on('call-rejected', (data: { userId: string }) => {
 			// alert('Call was rejected'); // Removed, handled by connectionState
-			handleEndCall();
+			// Don't emit call-end - that creates an infinite loop
+			incomingCall.set(null);
 		});
 
 		$socket.on('call-ended', (data: { userId: string }) => {
 			// alert('Call was ended'); // Removed, handled by connectionState
-			handleEndCall();
+			// Don't emit call-end - that creates an infinite loop
+			// Just clean up the local state
+			removeCall(data.userId);
 		});
 
 		$socket.on('call-offer', async (data: { offer: RTCSessionDescriptionInit; senderId: string }) => {

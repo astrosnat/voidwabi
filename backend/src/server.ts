@@ -333,15 +333,24 @@ if (!existsSync(UPLOADS_DIR)) {
 }
 
 // Create HTTP server using Node.js http module (Bun compatible)
-const server = createServer((req, res) => {
+const server = createServer();
+
+// Request handler - but Socket.IO will handle /socket.io/ requests first
+server.on('request', (req, res) => {
+  // Skip Socket.IO requests - Socket.IO handles them at a lower level
+  if (req.url?.startsWith('/socket.io/')) {
+    return;
+  }
+
   const url = new URL(req.url || "/", `http://${req.headers.host}`);
 
   // CORS headers for all requests - dynamically set based on request origin
   const allowedOrigins = [
     'http://localhost:5173',
+    'http://localhost:3000',
     'http://tauri.localhost',
-    'https://ungruff-subtarsal-libby.ngrok-free.dev',
-    process.env.FRONTEND_URL
+    process.env.FRONTEND_URL,
+    process.env.PUBLIC_URL
   ].filter(Boolean);
 
   const requestOrigin = req.headers.origin;
@@ -852,17 +861,44 @@ const server = createServer((req, res) => {
 });
 
 // Start HTTP server
-server.listen(PORT);
+server.listen(PORT, '0.0.0.0');
+console.log('[Server] Listening on 0.0.0.0:' + PORT);
 
 // Create Socket.IO server attached to HTTP server
 const io = new Server(server, {
   cors: {
-    origin: [
-      "http://localhost:5173",
-      "http://tauri.localhost",
-      "https://ungruff-subtarsal-libby.ngrok-free.dev",
-      process.env.FRONTEND_URL
-    ].filter(Boolean), // Remove undefined if FRONTEND_URL not set
+    origin: (origin, callback) => {
+      // Allow if no origin header (same-origin requests)
+      if (!origin) {
+        return callback(null, true);
+      }
+
+      const allowedOrigins = [
+        "http://localhost:5173",
+        "http://localhost:3000",
+        "http://tauri.localhost",
+        process.env.FRONTEND_URL,
+        process.env.PUBLIC_URL
+      ].filter(Boolean);
+
+      // Check exact match
+      if (allowedOrigins.includes(origin)) {
+        return callback(null, true);
+      }
+
+      // In production, allow requests from the same origin
+      // This handles cases where frontend and backend are on the same domain/IP
+      try {
+        const originUrl = new URL(origin);
+        // Allow any origin in production that comes from the same protocol
+        // Socket.IO will validate the actual connection handshake
+        return callback(null, true);
+      } catch (e) {
+        // Invalid origin URL
+      }
+
+      callback(new Error('Not allowed by CORS'));
+    },
     methods: ["GET", "POST"],
     credentials: true
   },

@@ -213,6 +213,8 @@ input:focus, textarea:focus {
 .emote {
 	width: 2em;
 	height: 2em;
+	max-width: 128px;
+	max-height: 128px;
 	vertical-align: -0.4em;
 	display: inline-block;
 	object-fit: contain;

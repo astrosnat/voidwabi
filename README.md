@@ -1,6 +1,6 @@
-# Community Chat
+# Wabi - A Self-Hosted, Extensible Chat Platform
 
-A self-hosted, ephemeral chat system with screen sharing for 10-50 users. Built with privacy, simplicity, and easy deployment in mind.
+Wabi is a private, self-hosted, and ephemeral real-time chat application designed for small to medium-sized communities (10-50 users). It runs as a web application and can be packaged as a native desktop application using Tauri. It prioritizes privacy and simplicity, with all chat data stored in-memory and disappearing when the server restarts.
 
 ## Features
 
@@ -17,36 +17,42 @@ A self-hosted, ephemeral chat system with screen sharing for 10-50 users. Built 
 
 ## Tech Stack
 
-- **Frontend**: SvelteKit with TypeScript
-- **Backend**: Bun runtime with Socket.IO
-- **Real-time**: Socket.IO for chat, WebRTC for screen sharing
-- **Drawing**: Excalidraw
-- **GIFs**: Giphy API
-- **Deployment**: Single binary executable + Docker
+- **Backend**: Node.js (Bun Runtime), Socket.IO, TypeScript
+- **Frontend**: SvelteKit, TypeScript
+- **Desktop**: Tauri
+- **Real-time Comms**: Socket.IO (Signaling), WebRTC (Media)
+- **Relay Server**: Coturn, Docker & Docker Compose
 
-## Quick Start
+## Project Structure
+
+```
+.
+├── backend/         # Node.js Socket.IO backend
+├── frontend/        # SvelteKit frontend & Tauri desktop wrapper
+├── plugins/         # Directory for backend plugins
+├── turn-server/     # Pre-configured Coturn TURN server for Docker
+└── pureref-connector/ # Standalone tool for PureRef integration
+```
+
+## Getting Started
 
 ### Prerequisites
 
-- [Bun](https://bun.sh) v1.0 or higher
-- Modern web browser with WebRTC support
+- [Bun](https://bun.sh/) v1.0 or higher
+- [Docker](https://www.docker.com/get-started) & [Docker Compose](https://docs.docker.com/compose/install/) (for the TURN server)
+- A modern web browser
 
-### Development
+### 1. Installation
 
-1. Clone the repository:
+Clone the repository and install all dependencies using Bun's workspace feature.
+
 ```bash
 git clone <your-repo-url>
-cd community-chat
-```
-
-2. Install dependencies:
-```bash
+cd <repo-name>
 bun install
-cd frontend && bun install && cd ..
-cd backend && bun install && cd ..
 ```
 
-3. Set up environment variables:
+### 2. Configure the Backend URL
 
 Backend (create `backend/.env`):
 ```env
@@ -55,13 +61,19 @@ FRONTEND_URL=http://localhost:5173
 ENABLE_LOGGING=false  # Set to 'true' to enable activity logging
 ```
 
-Frontend (create `frontend/.env`):
-```env
-VITE_SOCKET_URL=http://localhost:3000
-VITE_GIPHY_API_KEY=your_giphy_api_key_here
-```
+### 3. Configure and Run the TURN Relay Server
 
-4. Start development servers:
+For voice/video calls to work reliably, you need the TURN relay server.
+
+1.  Navigate to the `turn-server` directory: `cd turn-server`.
+2.  **Open `turnserver.conf`** and change `external-ip=127.0.0.1` to your machine's local IP address (or public IP for production).
+3.  Start the server using Docker Compose: `docker-compose up -d`.
+4.  Navigate back to the root directory: `cd ..`
+
+### 4. Run the Application
+
+Start the backend and frontend development servers concurrently from the root directory.
+
 ```bash
 bun run dev
 ```
@@ -137,7 +149,7 @@ docker-compose up -d
 
 ## Architecture
 
-### Backend (Bun + Socket.IO)
+### Backend Plugin System
 
 - In-memory data storage (ephemeral)
 - Socket.IO event handlers for:
@@ -152,22 +164,27 @@ docker-compose up -d
 - Privacy-focused: Opt-in activity logging (disabled by default)
 - Automatic file deletion when messages are removed
 
-### Frontend (SvelteKit)
+- The server automatically loads any subdirectory in `plugins/` that contains a `plugin.json` manifest.
+- Each plugin's entry point receives a `context` object, giving it access to the core `io` (Socket.IO server) instance and the application's `state`.
+- This allows you to listen for events, emit new ones, and modify the shared server state, enabling deep integration and extension of core functionality.
 
-```
-src/
-├── lib/
-│   ├── components/
-│   │   ├── Chat.svelte           # Main chat interface
-│   │   ├── DrawingBoard.svelte   # Excalidraw integration
-│   │   ├── ScreenShareViewer.svelte
-│   │   ├── GiphyPicker.svelte
-│   │   ├── Sidebar.svelte
-│   │   └── ...
-│   ├── socket.ts                 # Socket.IO client store
-│   └── webrtc.ts                 # WebRTC utilities
-└── routes/
-    └── +page.svelte              # Main app entry
+### WebRTC and the TURN Server
+
+For reliable WebRTC connections (especially across different networks), STUN and TURN servers are used.
+
+- **STUN**: Public STUN servers are pre-configured to help clients discover their public IP address.
+- **TURN**: This project includes a pre-configured `coturn` TURN server in the `/turn-server` directory. It relays media traffic when a direct peer-to-peer connection fails. The frontend is already configured to use it, but you must ensure it's running and its IP is correctly configured in `turnserver.conf` and `frontend/src/lib/(calling|webrtc).ts`.
+
+## Building for Production
+
+This application can be built into a native desktop application.
+
+1.  Ensure all configurations (especially server URLs) are set for production.
+2.  Run the Tauri build command from the `frontend/` directory:
+
+```bash
+cd frontend
+bun run tauri build
 ```
 
 ## Usage
@@ -296,26 +313,15 @@ This chat system is designed with **privacy first**:
 
 ## Contributing
 
-Contributions welcome! This is an MVP - there's lots of room for improvement:
+This project is under active development. Key areas for contribution include:
 
-- [ ] Add authentication
-- [ ] Persist messages to optional database
+- [ ] Add authentication and user accounts
+- [ ] Persist messages to an optional database (e.g., SQLite)
 - [ ] Add message reactions
-- [ ] File sharing
-- [ ] Voice/video chat
+- [ ] Admin/moderation controls
 - [ ] Custom themes
-- [ ] Admin controls
 - [ ] Message threading
 
 ## License
 
-MIT License - feel free to use for any purpose.
-
-## Credits
-
-Built with:
-- [Bun](https://bun.sh)
-- [SvelteKit](https://kit.svelte.dev)
-- [Socket.IO](https://socket.io)
-- [Excalidraw](https://excalidraw.com)
-- [Giphy](https://giphy.com)
+MIT License
