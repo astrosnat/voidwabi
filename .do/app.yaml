@@ -1,8 +1,8 @@
 name: wabi
 services:
-- name: wabi-backend
-  github:
-    repo: AzureFoxStudios/wabi
+- name: wabi
+  git:
+    repo_clone_url: https://github.com/AzureFoxStudios/wabi
     branch: main
   dockerfile_path: Dockerfile
   envs:
