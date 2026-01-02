@@ -10,6 +10,15 @@
 	export let data: PageData;
 
 	onMount(() => {
+		// Register service worker for PWA support
+		if ('serviceWorker' in navigator) {
+			navigator.serviceWorker.register('/sw.js').then((registration) => {
+				console.log('✅ Service Worker registered:', registration);
+			}).catch((error) => {
+				console.error('❌ Service Worker registration failed:', error);
+			});
+		}
+
 		// Initialize socket connection in background (non-blocking)
 		const username = localStorage.getItem('username') || `User${Math.floor(Math.random() * 1000)}`;
 		localStorage.setItem('username', username);
