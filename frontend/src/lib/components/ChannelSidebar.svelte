@@ -383,7 +383,7 @@
 		border-right: 1px solid var(--border);
 		display: flex;
 		flex-direction: column;
-		height: 100vh;
+		height: 100dvh;
 		overflow: hidden;
 	}
 
@@ -1016,7 +1016,7 @@
 	/* ========== MOBILE STYLES ========== */
 	@media (max-width: 768px) {
 		.channel-sidebar {
-			height: calc(100vh - 56px);
+			height: calc(100dvh - 56px);
 		}
 
 		.mobile-close-btn {
