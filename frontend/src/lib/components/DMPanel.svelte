@@ -333,7 +333,7 @@
 	.dm-input-container {
 		display: flex;
 		align-items: center;
-		background: transparent;
+		background: var(--bg-tertiary);
 		border-radius: 8px;
 		padding: 0.25rem;
 		gap: 0.25rem;
@@ -341,15 +341,11 @@
 	}
 
 	.dm-input-container:hover {
-		background: rgba(26, 26, 46, 0.4);
-		backdrop-filter: blur(10px);
-		box-shadow: 0 8px 32px 0 rgba(123, 104, 238, 0.15);
+		box-shadow: inset 0 0 8px rgba(255, 0, 255, 0.15);
 	}
 
 	.dm-input-container:focus-within {
-		background: rgba(26, 26, 46, 0.5);
-		backdrop-filter: blur(12px);
-		box-shadow: 0 8px 32px 0 rgba(255, 0, 255, 0.2);
+		box-shadow: inset 0 0 8px rgba(255, 0, 255, 0.2);
 	}
 
 	.dm-input {

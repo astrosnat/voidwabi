@@ -29,6 +29,7 @@
 	let showStatusPopup = false;
 	let showChannelSettingsModal = false;
 	let selectedChannelForSettings: Channel | null = null;
+	let sidebarCollapsed = false;
 
 	// Separate channels by type
 	// Note: DMs are excluded from sidebar - only accessible via UserPanel
@@ -100,19 +101,18 @@
 	}
 </script>
 
-<div class="channel-sidebar">
+<div class="channel-sidebar" class:collapsed={sidebarCollapsed}>
 	<div class="top-section">
 		<button class="mobile-close-btn" on:click={() => dispatch('close')}>&times;</button>
 		<div class="logo">
 			<img src="/wabi-logo.png" alt="Wabi" class="logo-img" />
 		</div>
-		<a href="/business" class="hub-link-header" title="Business Hub">
-			<svg width="20" height="20" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
-		</a>
+		<button class="collapse-btn" on:click={() => sidebarCollapsed = !sidebarCollapsed} title={sidebarCollapsed ? 'Expand' : 'Collapse'}>
+			{sidebarCollapsed ? '›' : '‹'}
+		</button>
 	</div>
 
 	<div class="sidebar-header">
-		<h3>Text Channels</h3>
 		<div class="header-buttons">
 			<button
 				class="screen-share-icon-btn"
@@ -385,6 +385,39 @@
 		flex-direction: column;
 		height: 100dvh;
 		overflow: hidden;
+		transition: width 0.3s ease;
+	}
+
+	.channel-sidebar.collapsed {
+		width: 60px;
+		min-width: 60px;
+	}
+
+	.channel-sidebar.collapsed .logo-img {
+		display: none;
+	}
+
+	.channel-sidebar.collapsed .sidebar-header,
+	.channel-sidebar.collapsed .channel-list,
+	.channel-sidebar.collapsed .profile-card h3,
+	.channel-sidebar.collapsed .profile-card .user-details,
+	.channel-sidebar.collapsed .create-channel {
+		display: none;
+	}
+
+	.channel-sidebar.collapsed .channel-btn {
+		font-size: 0;
+	}
+
+	.channel-sidebar.collapsed .channel-btn .hash,
+	.channel-sidebar.collapsed .channel-btn .group-icon {
+		font-size: 1rem;
+		margin: 0;
+	}
+
+	.channel-sidebar.collapsed .channel-item {
+		justify-content: center;
+		padding: 0.25rem;
 	}
 
 	.top-section {
@@ -409,23 +442,24 @@
 		filter: invert(1) drop-shadow(2px 2px 4px rgba(0, 0, 0, 0.3));
 	}
 
-	.hub-link-header {
+	.collapse-btn {
+		background: transparent;
+		border: none;
+		color: var(--text-secondary);
+		cursor: pointer;
+		font-size: 1.5rem;
+		padding: 0.5rem;
+		transition: all 0.2s;
+		min-width: 36px;
+		min-height: 36px;
 		display: flex;
 		align-items: center;
 		justify-content: center;
-		color: var(--text-secondary);
-		padding: 0.5rem;
-		border-radius: 4px;
-		transition: all 0.2s;
 	}
-	.hub-link-header:hover {
+
+	.collapse-btn:hover {
 		background: var(--bg-secondary);
-		color: var(--accent);
-	}
-	.hub-link-header svg {
-		stroke: currentColor;
-		fill: none;
-		stroke-width: 2;
+		color: var(--text-primary);
 	}
 
 	.settings-btn {

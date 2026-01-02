@@ -610,7 +610,7 @@
 	.chat-header {
 		flex-shrink: 0;
 		padding: 0.625rem 1rem;
-		background: var(--bg-secondary);
+		background: var(--bg-primary);
 		border-bottom: 1px solid var(--border);
 		display: flex;
 		align-items: center;
