@@ -1,20 +1,28 @@
 name: wabi
+region: sgp
 services:
-- name: wabi-backend
+- name: web
   github:
     repo: AzureFoxStudios/wabi
     branch: main
-  envs:
-  - key: PORT
-    value: "3000"
-  - key: NODE_ENV
-    value: production
-  - key: FRONTEND_URL
-    scope: RUN_AND_BUILD_TIME
-    value: ${APP_DOMAIN}
-  - key: PUBLIC_URL
-    scope: RUN_AND_BUILD_TIME
-    value: ${APP_DOMAIN}
-  http_port: 3000
+    deploy_on_push: true
+  dockerfile_path: Dockerfile
+  http_port: 8080
+  instance_count: 1
+  instance_size_slug: basic-xs
+  run_command: ""
   health_check:
     http_path: /health
+  envs:
+  - key: NODE_ENV
+    value: production
+    scope: RUN_AND_BUILD_TIME
+  - key: PORT
+    value: "8080"
+    scope: RUN_AND_BUILD_TIME
+  - key: FRONTEND_URL
+    value: ${APP_DOMAIN}
+    scope: RUN_AND_BUILD_TIME
+  - key: PUBLIC_URL
+    value: ${APP_DOMAIN}
+    scope: RUN_AND_BUILD_TIME

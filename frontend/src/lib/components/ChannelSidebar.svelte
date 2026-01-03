@@ -30,6 +30,45 @@
 	let showChannelSettingsModal = false;
 	let selectedChannelForSettings: Channel | null = null;
 
+	// Sidebar width management - 3 modes: normal (280px), compact (60px), hidden (0px)
+	export let sidebarWidth = 280;
+	let isResizing = false;
+	let startX = 0;
+	let startWidth = 0;
+
+	function startResize(e: MouseEvent) {
+		isResizing = true;
+		startX = e.clientX;
+		startWidth = sidebarWidth;
+		document.addEventListener('mousemove', handleResize);
+		document.addEventListener('mouseup', stopResize);
+	}
+
+	function handleResize(e: MouseEvent) {
+		if (!isResizing) return;
+		const delta = e.clientX - startX;
+		sidebarWidth = Math.max(0, startWidth + delta);
+	}
+
+	function stopResize() {
+		isResizing = false;
+		document.removeEventListener('mousemove', handleResize);
+		document.removeEventListener('mouseup', stopResize);
+
+		// Snap to nearest mode
+		if (sidebarWidth < 30) {
+			sidebarWidth = 0; // Hidden
+		} else if (sidebarWidth < 170) {
+			sidebarWidth = 60; // Compact
+		} else {
+			sidebarWidth = 280; // Normal
+		}
+	}
+
+	function toggleSidebar() {
+		sidebarWidth = sidebarWidth === 0 ? 280 : 0;
+	}
+
 	// Separate channels by type
 	// Note: DMs are excluded from sidebar - only accessible via UserPanel
 	$: publicChannels = $channels.filter(ch => !ch.type || ch.type === 'public');
@@ -100,19 +139,21 @@
 	}
 </script>
 
-<div class="channel-sidebar">
+{#if sidebarWidth === 0}
+	<button class="expand-btn" on:click={toggleSidebar} title="Expand sidebar">›</button>
+{/if}
+
+<div class="channel-sidebar" style="width: {sidebarWidth}px">
 	<div class="top-section">
 		<button class="mobile-close-btn" on:click={() => dispatch('close')}>&times;</button>
 		<div class="logo">
 			<img src="/wabi-logo.png" alt="Wabi" class="logo-img" />
 		</div>
-		<a href="/business" class="hub-link-header" title="Business Hub">
-			<svg width="20" height="20" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
-		</a>
 	</div>
 
+	<div class="resize-handle" on:mousedown={startResize}></div>
+
 	<div class="sidebar-header">
-		<h3>Text Channels</h3>
 		<div class="header-buttons">
 			<button
 				class="screen-share-icon-btn"
@@ -143,7 +184,7 @@
 		<!-- Public Channels -->
 		{#each publicChannels as channel (channel.id)}
 			<div class="channel-item" class:active={$currentChannel === channel.id}>
-				<button class="channel-btn" on:click={() => handleChannelClick(channel.id)}>
+				<button class="channel-btn" data-abbrev={channel.name.charAt(0).toUpperCase()} on:click={() => handleChannelClick(channel.id)}>
 					<span class="hash">#</span>
 					{channel.name}
 					{#if channel.autoDeleteAfter}
@@ -170,7 +211,7 @@
 			<div class="section-header">Group Chats</div>
 			{#each groupChannels as channel (channel.id)}
 				<div class="channel-item" class:active={$currentChannel === channel.id}>
-					<button class="channel-btn" on:click={() => handleChannelClick(channel.id)}>
+					<button class="channel-btn" data-abbrev={channel.name.charAt(0).toUpperCase()} on:click={() => handleChannelClick(channel.id)}>
 						<span class="group-icon">👥</span>
 						{channel.name}
 						{#if channel.autoDeleteAfter}
@@ -377,14 +418,110 @@
 {/if}
 
 <style>
+	.expand-btn {
+		position: fixed;
+		left: 0;
+		top: 50%;
+		transform: translateY(-50%);
+		width: 30px;
+		height: 30px;
+		background: var(--bg-tertiary);
+		border: 1px solid var(--border);
+		border-right: none;
+		color: var(--text-secondary);
+		cursor: pointer;
+		font-size: 1.5rem;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		z-index: 100;
+		transition: all 0.2s;
+		padding: 0;
+		opacity: 0;
+		pointer-events: none;
+	}
+
+	.expand-btn:hover {
+		background: var(--bg-secondary);
+		color: var(--text-primary);
+		opacity: 1;
+	}
+
+	/* Show on hover near the left edge */
+	body:has(.expand-btn:hover) .expand-btn,
+	.expand-btn:hover {
+		opacity: 1;
+		pointer-events: auto;
+	}
+
 	.channel-sidebar {
-		width: 100%;
 		background: var(--bg-tertiary);
 		border-right: 1px solid var(--border);
 		display: flex;
 		flex-direction: column;
-		height: 100vh;
+		height: 100dvh;
 		overflow: hidden;
+		transition: width 0.2s ease;
+		position: relative;
+		z-index: 50;
+	}
+
+	.resize-handle {
+		position: absolute;
+		right: -4px;
+		top: 0;
+		width: 8px;
+		height: 100%;
+		cursor: col-resize;
+		z-index: 5;
+	}
+
+	/* Compact mode: show only letters */
+	.channel-sidebar[style*="width: 60px"] .logo-img {
+		height: 24px;
+		width: auto;
+	}
+
+	.channel-sidebar[style*="width: 60px"] .sidebar-header,
+	.channel-sidebar[style*="width: 60px"] .profile-card .user-details,
+	.channel-sidebar[style*="width: 60px"] .profile-controls,
+	.channel-sidebar[style*="width: 60px"] .status-popup,
+	.channel-sidebar[style*="width: 60px"] .create-channel {
+		display: none;
+	}
+
+	.channel-sidebar[style*="width: 60px"] .channel-btn {
+		font-size: 0;
+		justify-content: center;
+		position: relative;
+		width: 100%;
+		height: 100%;
+	}
+
+	.channel-sidebar[style*="width: 60px"] .channel-btn::after {
+		content: attr(data-abbrev);
+		font-size: 0.8rem;
+		font-weight: 600;
+		color: var(--text-secondary);
+	}
+
+	.channel-sidebar[style*="width: 60px"] .channel-item.active .channel-btn::after {
+		color: var(--text-primary);
+	}
+
+	.channel-sidebar[style*="width: 60px"] .channel-btn .hash,
+	.channel-sidebar[style*="width: 60px"] .channel-btn .group-icon {
+		font-size: 1rem;
+		margin: 0;
+	}
+
+	.channel-sidebar[style*="width: 60px"] .channel-item {
+		justify-content: center;
+		padding: 0.25rem;
+	}
+
+	.channel-sidebar[style*="width: 60px"] .channel-actions {
+		display: none;
 	}
 
 	.top-section {
@@ -409,23 +546,24 @@
 		filter: invert(1) drop-shadow(2px 2px 4px rgba(0, 0, 0, 0.3));
 	}
 
-	.hub-link-header {
+	.collapse-btn {
+		background: transparent;
+		border: none;
+		color: var(--text-secondary);
+		cursor: pointer;
+		font-size: 1.5rem;
+		padding: 0.5rem;
+		transition: all 0.2s;
+		min-width: 36px;
+		min-height: 36px;
 		display: flex;
 		align-items: center;
 		justify-content: center;
-		color: var(--text-secondary);
-		padding: 0.5rem;
-		border-radius: 4px;
-		transition: all 0.2s;
 	}
-	.hub-link-header:hover {
+
+	.collapse-btn:hover {
 		background: var(--bg-secondary);
-		color: var(--accent);
-	}
-	.hub-link-header svg {
-		stroke: currentColor;
-		fill: none;
-		stroke-width: 2;
+		color: var(--text-primary);
 	}
 
 	.settings-btn {
@@ -1016,7 +1154,7 @@
 	/* ========== MOBILE STYLES ========== */
 	@media (max-width: 768px) {
 		.channel-sidebar {
-			height: calc(100vh - 56px);
+			height: calc(100dvh - 56px);
 		}
 
 		.mobile-close-btn {

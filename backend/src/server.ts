@@ -335,7 +335,45 @@ if (!existsSync(UPLOADS_DIR)) {
 // Create HTTP server using Node.js http module (Bun compatible)
 const server = createServer();
 
-// Request handler - but Socket.IO will handle /socket.io/ requests first
+// Create Socket.IO server BEFORE attaching request handler
+// This ensures Socket.IO can intercept /socket.io/ requests properly
+const io = new Server(server, {
+  cors: {
+    origin: (origin, callback) => {
+      // Allow if no origin header (same-origin requests)
+      if (!origin) {
+        return callback(null, true);
+      }
+
+      const allowedOrigins = [
+        "http://localhost:5173",
+        "http://localhost:3000",
+        "http://tauri.localhost",
+        process.env.FRONTEND_URL,
+        process.env.PUBLIC_URL
+      ].filter(Boolean);
+
+      // Check exact match
+      if (allowedOrigins.includes(origin)) {
+        return callback(null, true);
+      }
+
+      // In development, be strict. In production, be more lenient
+      if (process.env.NODE_ENV === 'production') {
+        // Allow any origin in production (backend may be behind reverse proxy)
+        return callback(null, true);
+      } else {
+        // In development, validate the origin more strictly
+        callback(new Error('Not allowed by CORS'));
+      }
+    },
+    methods: ["GET", "POST"],
+    credentials: true
+  },
+  maxHttpBufferSize: 75 * 1024 * 1024 // 75MB (to handle 50MB files after base64 encoding ~33% overhead)
+});
+
+// Request handler
 server.on('request', (req, res) => {
   // Skip Socket.IO requests - Socket.IO handles them at a lower level
   if (req.url?.startsWith('/socket.io/')) {
@@ -354,9 +392,11 @@ server.on('request', (req, res) => {
   ].filter(Boolean);
 
   const requestOrigin = req.headers.origin;
-  if (requestOrigin && allowedOrigins.includes(requestOrigin)) {
+  // In production, accept all origins for better deployment flexibility
+  // Socket.IO has its own CORS validation below
+  if (requestOrigin) {
     res.setHeader('Access-Control-Allow-Origin', requestOrigin);
-  } else {
+  } else if (process.env.NODE_ENV === 'development') {
     res.setHeader('Access-Control-Allow-Origin', 'http://localhost:5173');
   }
 
@@ -434,7 +474,8 @@ server.on('request', (req, res) => {
           }
           writeFileSync(filePath, profilePictureFile);
 
-          const serverUrl = `http://localhost:${PORT}`; // Assuming frontend and backend run on same host, different ports
+          // Use PUBLIC_URL if available, otherwise construct from request host
+          const serverUrl = process.env.PUBLIC_URL || `http://${req.headers.host}`;
           const profilePictureUrl = `${serverUrl}/uploads/${fileId}`;
 
           res.writeHead(200, { "Content-Type": "application/json" });
@@ -705,8 +746,8 @@ server.on('request', (req, res) => {
           }
           writeFileSync(filePath, fileData);
 
-          // Use full URL for emoji (important for dev mode with separate ports)
-          const serverUrl = `http://localhost:${PORT}`;
+          // Use PUBLIC_URL if available, otherwise construct from request host
+          const serverUrl = process.env.PUBLIC_URL || `http://${req.headers.host}`;
           const emojiUrl = `${serverUrl}/uploads/${fileId}`;
 
           // Add emoji to database
@@ -793,6 +834,7 @@ server.on('request', (req, res) => {
         'jpg': 'image/jpeg',
         'jpeg': 'image/jpeg',
         'gif': 'image/gif',
+        'bmp': 'image/bmp',
         'webp': 'image/webp',
         'svg': 'image/svg+xml',
         'mp4': 'video/mp4',
@@ -830,6 +872,7 @@ server.on('request', (req, res) => {
         'jpg': 'image/jpeg',
         'jpeg': 'image/jpeg',
         'gif': 'image/gif',
+        'bmp': 'image/bmp',
         'webp': 'image/webp',
         'svg': 'image/svg+xml',
         'ico': 'image/x-icon',
@@ -863,47 +906,6 @@ server.on('request', (req, res) => {
 // Start HTTP server
 server.listen(PORT, '0.0.0.0');
 console.log('[Server] Listening on 0.0.0.0:' + PORT);
-
-// Create Socket.IO server attached to HTTP server
-const io = new Server(server, {
-  cors: {
-    origin: (origin, callback) => {
-      // Allow if no origin header (same-origin requests)
-      if (!origin) {
-        return callback(null, true);
-      }
-
-      const allowedOrigins = [
-        "http://localhost:5173",
-        "http://localhost:3000",
-        "http://tauri.localhost",
-        process.env.FRONTEND_URL,
-        process.env.PUBLIC_URL
-      ].filter(Boolean);
-
-      // Check exact match
-      if (allowedOrigins.includes(origin)) {
-        return callback(null, true);
-      }
-
-      // In production, allow requests from the same origin
-      // This handles cases where frontend and backend are on the same domain/IP
-      try {
-        const originUrl = new URL(origin);
-        // Allow any origin in production that comes from the same protocol
-        // Socket.IO will validate the actual connection handshake
-        return callback(null, true);
-      } catch (e) {
-        // Invalid origin URL
-      }
-
-      callback(new Error('Not allowed by CORS'));
-    },
-    methods: ["GET", "POST"],
-    credentials: true
-  },
-  maxHttpBufferSize: 75 * 1024 * 1024 // 75MB (to handle 50MB files after base64 encoding ~33% overhead)
-});
 
 // Helper function to emit to channel members only
 function emitToChannel(channelId: string, event: string, data: any) {

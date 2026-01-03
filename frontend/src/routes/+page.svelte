@@ -175,10 +175,7 @@
 			style:width="{channelSidebarWidth}px"
 			class:mobile-visible={isMobile && showMobileChannels}
 		>
-			<ChannelSidebar on:close={() => showMobileChannels = false} bind:activeView />
-			{#if !isMobile}
-				<div class="resize-handle resize-handle-channel" on:mousedown={startResizeChannel}></div>
-			{/if}
+			<ChannelSidebar on:close={() => showMobileChannels = false} bind:activeView bind:sidebarWidth={channelSidebarWidth} />
 		</div>
 
 		<!-- Main Content -->
@@ -297,12 +294,15 @@
 		color: var(--text-secondary);
 		transition: all 0.3s ease;
 		z-index: 999;
-		opacity: 0.6;
+		opacity: 0;
 		display: flex;
 		align-items: center;
 		justify-content: center;
 	}
-	.user-panel-toggle:hover { opacity: 1; background: var(--accent); }
+	.user-panel-toggle:hover {
+		opacity: 1;
+		background: var(--accent);
+	}
 
 	/* --- Mobile Styles --- */
 	.mobile-bottom-nav { display: none; }
