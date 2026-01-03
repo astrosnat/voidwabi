@@ -14,6 +14,10 @@
 	} from '$lib/business';
 	import type { TodoStatus, KanbanColumn } from '$lib/business/types';
 
+	// Props to track task panel state
+	export let showTaskPanel: boolean = false;
+	export let taskPanelWidth: number = 380;
+
 	// Drag and drop state
 	let draggingTodo: Todo | null = null;
 	let dragOverColumn: TodoStatus | null = null;
@@ -398,7 +402,12 @@
 
 		<!-- Scroll hint button right -->
 		{#if showRightScroll}
-			<button class="scroll-hint scroll-hint-right" on:click={scrollRight} title="Scroll right">
+			<button
+			class="scroll-hint scroll-hint-right"
+			style:right={showTaskPanel ? `${taskPanelWidth + 12}px` : '12px'}
+			on:click={scrollRight}
+			title="Scroll right"
+		>
 				›
 			</button>
 		{/if}

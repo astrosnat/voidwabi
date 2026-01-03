@@ -258,7 +258,7 @@
 			{:else if activeView === 'projects'}
 				<ProjectsView />
 			{:else if activeView === 'kanban'}
-				<KanbanBoard />
+				<KanbanBoard {showTaskPanel} {taskPanelWidth} />
 			{/if}
 		</main>
 
